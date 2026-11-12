@@ -5,6 +5,20 @@ import { useEffect, useRef, useState } from "react";
 import type { ReactorParams } from "@/engine";
 import type { EngineApi, EngineOutput } from "@/workers/engine.worker";
 
+/** Worker propio para tareas puntuales (ajuste, pronóstico): se crea al montar y se termina al desmontar. */
+export function useEngineWorker() {
+  const apiRef = useRef<Comlink.Remote<EngineApi> | null>(null);
+  useEffect(() => {
+    const worker = new Worker(new URL("../workers/engine.worker.ts", import.meta.url), { type: "module" });
+    apiRef.current = Comlink.wrap<EngineApi>(worker);
+    return () => {
+      worker.terminate();
+      apiRef.current = null;
+    };
+  }, []);
+  return apiRef;
+}
+
 /**
  * Corre el motor en un Web Worker cada vez que cambian los parámetros.
  * Si llegan cambios mientras calcula, solo se procesa el último (los intermedios se descartan).

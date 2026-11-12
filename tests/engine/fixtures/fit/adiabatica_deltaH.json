@@ -1,0 +1,103 @@
+{
+ "case": "adiabatica_deltaH",
+ "nominal": {
+  "keySpecies": "A",
+  "reversible": false,
+  "kinetics": {
+   "mode": "arrhenius",
+   "k": 0.05,
+   "A": 4300000000,
+   "E": 15000
+  },
+  "equilibrium": {
+   "method": "direct",
+   "Keq": 1,
+   "Keq_ref": 1,
+   "T_ref": 298.15
+  },
+  "deltaH": -10000,
+  "energy": {
+   "mode": "adiabatic",
+   "T0": 300,
+   "V": 1,
+   "UA": 200,
+   "T_cool": 300,
+   "m_c": 1,
+   "Cp_c": 1000
+  },
+  "stop": {
+   "mode": "complete",
+   "X_target": 0.9,
+   "t_final": 120,
+   "t_max": 100000
+  },
+  "timeUnit": "min",
+  "volume": {
+   "enabled": false,
+   "product": "C",
+   "P_kg_h": 100,
+   "M_g_mol": 100,
+   "t_dead": 30
+  },
+  "species": [
+   {
+    "id": "A",
+    "name": "",
+    "nu": -1,
+    "C0": 2,
+    "Cp": 30,
+    "order": 1,
+    "reverseOrder": 0,
+    "constantInRate": false,
+    "DGf": 0
+   },
+   {
+    "id": "B",
+    "name": "",
+    "nu": 1,
+    "C0": 0,
+    "Cp": 30,
+    "order": 0,
+    "reverseOrder": 1,
+    "constantInRate": false,
+    "DGf": 0
+   },
+   {
+    "id": "I",
+    "name": "Inerte (agua)",
+    "nu": 0,
+    "C0": 20,
+    "Cp": 18,
+    "order": 0,
+    "reverseOrder": 0,
+    "constantInRate": false,
+    "DGf": 0
+   }
+  ]
+ },
+ "fitParams": [
+  "k",
+  "E",
+  "deltaH"
+ ],
+ "sigmaT": 0.2,
+ "sigmaX": 0.02,
+ "truth": {
+  "k": 0.04964572130410518,
+  "E": 14800.0,
+  "deltaH": -11200.000000000002
+ },
+ "scipy": {
+  "values": [
+   0.0497383999809955,
+   14791.862568822164,
+   -11190.687053891525
+  ],
+  "std": [
+   0.00011663916832258396,
+   36.05026144349571,
+   6.709930419136144
+  ],
+  "chi2red": 0.6106000134279883
+ }
+}

@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Capa de ML en Python (incluye su .venv)
+    "ml/**",
   ]),
 ]);
 

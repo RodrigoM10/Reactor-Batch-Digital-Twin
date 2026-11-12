@@ -1,0 +1,114 @@
+{
+ "case": "icq_ideal",
+ "nominal": {
+  "keySpecies": "A",
+  "reversible": false,
+  "kinetics": {
+   "mode": "arrhenius",
+   "k": 0.05,
+   "A": 100000000000,
+   "E": 16000
+  },
+  "equilibrium": {
+   "method": "direct",
+   "Keq": 1,
+   "Keq_ref": 1,
+   "T_ref": 298.15
+  },
+  "deltaH": -18000,
+  "energy": {
+   "mode": "icq",
+   "T0": 305,
+   "V": 1,
+   "UA": 1500,
+   "T_cool": 300,
+   "m_c": 3,
+   "Cp_c": 1000
+  },
+  "stop": {
+   "mode": "complete",
+   "X_target": 0.9,
+   "t_final": 120,
+   "t_max": 100000
+  },
+  "timeUnit": "min",
+  "volume": {
+   "enabled": false,
+   "product": "C",
+   "P_kg_h": 100,
+   "M_g_mol": 100,
+   "t_dead": 30
+  },
+  "species": [
+   {
+    "id": "A",
+    "name": "",
+    "nu": -1,
+    "C0": 2,
+    "Cp": 35,
+    "order": 1,
+    "reverseOrder": 0,
+    "constantInRate": false,
+    "DGf": 0
+   },
+   {
+    "id": "B",
+    "name": "",
+    "nu": -1,
+    "C0": 2.5,
+    "Cp": 30,
+    "order": 1,
+    "reverseOrder": 0,
+    "constantInRate": false,
+    "DGf": 0
+   },
+   {
+    "id": "C",
+    "name": "",
+    "nu": 1,
+    "C0": 0,
+    "Cp": 50,
+    "order": 0,
+    "reverseOrder": 1,
+    "constantInRate": false,
+    "DGf": 0
+   },
+   {
+    "id": "I",
+    "name": "Solvente",
+    "nu": 0,
+    "C0": 25,
+    "Cp": 18,
+    "order": 0,
+    "reverseOrder": 0,
+    "constantInRate": false,
+    "DGf": 0
+   }
+  ]
+ },
+ "fitParams": [
+  "k",
+  "E",
+  "UA"
+ ],
+ "sigmaT": 0.2,
+ "sigmaX": 0.02,
+ "truth": {
+  "k": 0.2919338328542843,
+  "E": 16299.999999999998,
+  "UA": 1350.0000000000005
+ },
+ "scipy": {
+  "values": [
+   0.2827080300538426,
+   17031.19433908358,
+   1365.7907502616627
+  ],
+  "std": [
+   0.005437477941290719,
+   397.50553951031685,
+   12.007272433917377
+  ],
+  "chi2red": 0.5785823788337878
+ }
+}

@@ -1,5 +1,6 @@
 import * as Comlink from "comlink";
 import { levenspiel, simulate, xtDiagram, type ReactorParams, type SimResult, type XTDiagram } from "@/engine";
+import { fitParameters, type FitOptions, type FitResult, type Measurements } from "@/engine/fit";
 
 export interface EngineOutput {
   result: SimResult;
@@ -12,6 +13,14 @@ const api = {
     const result = simulate(params);
     if (!result.ok) return { result, xt: null, levenspiel: [] };
     return { result, xt: xtDiagram(params, result), levenspiel: levenspiel(params, result) };
+  },
+  fit(params: ReactorParams, data: Measurements, opts: FitOptions): FitResult {
+    return fitParameters(params, data, opts);
+  },
+  simulateAt(params: ReactorParams, times: number[]): SimResult {
+    const p = structuredClone(params);
+    p.stop = { ...p.stop, mode: "time", t_final: Math.max(...times) };
+    return simulate(p, { sampleTimes: times });
   },
 };
 

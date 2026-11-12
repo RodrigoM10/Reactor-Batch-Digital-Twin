@@ -1,0 +1,103 @@
+{
+ "config": {
+  "A_factor": 1.1092401791239535,
+  "dE": 246.4854430503475,
+  "dDeltaH": 264.3496609467097,
+  "UA_factor": 0.8224450683770268,
+  "deltaCp": -5.645056439685437,
+  "k_d": 0.004233264489725757,
+  "UA_amb": 33.10810375281767,
+  "T_amb": 298.15,
+  "sigma_T": 0.3,
+  "tau_T": 0.12275974091074837,
+  "dt_T": 0.25,
+  "sigma_X": 0.01,
+  "dt_X": null
+ },
+ "true_params": {
+  "keySpecies": "A",
+  "reversible": false,
+  "kinetics": {
+   "mode": "arrhenius",
+   "k": 0.05,
+   "A": 110924017912.39534,
+   "E": 16246.485443050347
+  },
+  "equilibrium": {
+   "method": "direct",
+   "Keq": 1,
+   "Keq_ref": 1,
+   "T_ref": 298.15
+  },
+  "deltaH": -17735.65033905329,
+  "energy": {
+   "mode": "icq",
+   "T0": 305,
+   "V": 1,
+   "UA": 1233.6676025655402,
+   "T_cool": 300,
+   "m_c": 3,
+   "Cp_c": 1000
+  },
+  "stop": {
+   "mode": "complete",
+   "X_target": 0.9,
+   "t_final": 120,
+   "t_max": 100000
+  },
+  "timeUnit": "min",
+  "volume": {
+   "enabled": false,
+   "product": "C",
+   "P_kg_h": 100,
+   "M_g_mol": 100,
+   "t_dead": 30
+  },
+  "species": [
+   {
+    "id": "A",
+    "name": "",
+    "nu": -1,
+    "C0": 2,
+    "Cp": 35,
+    "order": 1,
+    "reverseOrder": 0,
+    "constantInRate": false,
+    "DGf": 0
+   },
+   {
+    "id": "B",
+    "name": "",
+    "nu": -1,
+    "C0": 2.5,
+    "Cp": 30,
+    "order": 1,
+    "reverseOrder": 0,
+    "constantInRate": false,
+    "DGf": 0
+   },
+   {
+    "id": "C",
+    "name": "",
+    "nu": 1,
+    "C0": 0,
+    "Cp": 50,
+    "order": 0,
+    "reverseOrder": 1,
+    "constantInRate": false,
+    "DGf": 0
+   },
+   {
+    "id": "I",
+    "name": "Solvente",
+    "nu": 0,
+    "C0": 25,
+    "Cp": 18,
+    "order": 0,
+    "reverseOrder": 0,
+    "constantInRate": false,
+    "DGf": 0
+   }
+  ]
+ }
+}

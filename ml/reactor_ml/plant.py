@@ -76,24 +76,24 @@ class PlantRun:
 
 def run_plant(nominal: dict, cfg: PlantConfig, t_end: float, rng: np.random.Generator) -> PlantRun:
     p = true_params(nominal, cfg)
-    fine = np.linspace(0, t_end, 2001)
+    dt_T = cfg.dt_T or t_end / 100
+    tT = np.arange(0, t_end + 1e-12, dt_T)
+    tX = np.arange(0, t_end + 1e-12, cfg.dt_X) if cfg.dt_X else np.array([])
+    # La grilla fina incluye los instantes de medición, así np.interp devuelve valores exactos allí.
+    fine = np.unique(np.concatenate([np.linspace(0, t_end, 2001), tT, tX]))
     clean = simulate(p, sample_times=fine, extras=plant_extras(p, cfg))
 
     # Termómetro con retardo de primer orden: dTm/dt = (T − Tm)/τ
     Tm = clean.T.copy()
     if cfg.tau_T > 0:
-        dt = fine[1] - fine[0]
-        a = dt / (cfg.tau_T + dt)
         for i in range(1, len(Tm)):
+            a = (fine[i] - fine[i - 1]) / (cfg.tau_T + fine[i] - fine[i - 1])
             Tm[i] = Tm[i - 1] + a * (clean.T[i] - Tm[i - 1])
 
-    dt_T = cfg.dt_T or t_end / 100
-    tT = np.arange(0, t_end + 1e-12, dt_T)
     T_meas = np.interp(tT, fine, Tm) + rng.normal(0, cfg.sigma_T, tT.size)
     df = pd.DataFrame({"t": np.round(tT, 9), "T": T_meas})
 
     if cfg.dt_X:
-        tX = np.arange(0, t_end + 1e-12, cfg.dt_X)
         X_meas = np.clip(np.interp(tX, fine, clean.X) + rng.normal(0, cfg.sigma_X, tX.size), 0, 1)
         df = df.merge(pd.DataFrame({"t": np.round(tX, 9), "X": X_meas}), on="t", how="outer")
     else:

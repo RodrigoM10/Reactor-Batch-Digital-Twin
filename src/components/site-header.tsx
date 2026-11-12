@@ -2,10 +2,18 @@
 
 import { Moon, Sun } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { cn } from "@/lib/format";
 import { V1_URL } from "@/lib/site";
 
+export const MODULES = [
+  { href: "/simulador", label: "Simular" },
+  { href: "/calibrar", label: "Calibrar" },
+];
+
 export function SiteHeader({ children }: { children?: ReactNode }) {
+  const pathname = usePathname();
   const toggleTheme = () => {
     const root = document.documentElement;
     const current =
@@ -27,6 +35,20 @@ export function SiteHeader({ children }: { children?: ReactNode }) {
           <span className="hidden sm:inline">Reactor Batch</span>
           <span className="rounded bg-accent-soft px-1.5 py-0.5 text-[11px] font-bold text-accent">2.0</span>
         </Link>
+        <nav className="flex items-center gap-0.5 overflow-x-auto">
+          {MODULES.map((m) => (
+            <Link
+              key={m.href}
+              href={m.href}
+              className={cn(
+                "rounded-md px-2.5 py-1.5 text-sm whitespace-nowrap transition-colors",
+                pathname === m.href ? "bg-accent-soft font-medium text-accent" : "text-muted hover:text-text",
+              )}
+            >
+              {m.label}
+            </Link>
+          ))}
+        </nav>
         <div className="ml-auto flex items-center gap-2">
           {children}
           <a
