@@ -14,8 +14,12 @@ export function equilibriumConstant(p: ReactorParams, T: number): number {
   switch (eq.method) {
     case "direct":
       return eq.Keq;
-    case "vant_hoff":
-      return eq.Keq_ref * Math.exp((p.deltaH / R) * (1 / eq.T_ref - 1 / T));
+    case "vant_hoff": {
+      // K_c es por reacción escrita (aA + bB ⇌ …) y deltaH es por mol de clave: ΔH_rxn = |ν_clave|·ΔH
+      const key = p.species.find((s) => s.id === p.keySpecies);
+      const dH_rxn = Math.abs(key?.nu ?? 1) * p.deltaH;
+      return eq.Keq_ref * Math.exp((dH_rxn / R) * (1 / eq.T_ref - 1 / T));
+    }
     case "gibbs": {
       const dG = p.species.reduce((acc, s) => acc + s.nu * s.DGf, 0);
       return Math.exp(-dG / (R * T));

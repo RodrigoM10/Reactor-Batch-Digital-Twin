@@ -1,12 +1,17 @@
 "use client";
 
 import { Atom, Flame, FlaskConical, Gauge, Plus, Ruler, Scale, Timer, Trash2 } from "lucide-react";
-import { species as makeSpecies, type ReactorParams, type Species } from "@/engine";
+import { convertTimeUnit, species as makeSpecies, type ReactorParams, type Species, type TimeUnit } from "@/engine";
 import { useReactorStore } from "@/lib/store";
 import { cn, fmt, TIME_LABEL } from "@/lib/format";
 import { NumberField, Section, Segmented, SelectField, Toggle } from "./ui/fields";
 
 const R = 1.987;
+const TIME_OPTIONS: { value: TimeUnit; label: string }[] = [
+  { value: "s", label: "segundos" },
+  { value: "min", label: "minutos" },
+  { value: "h", label: "horas" },
+];
 
 export function reactionEquation(p: ReactorParams) {
   const term = (s: Species) => `${Math.abs(s.nu) === 1 ? "" : Math.abs(s.nu)}${s.id}`;
@@ -20,6 +25,8 @@ export function ParamsPanel() {
   const update = useReactorStore((s) => s.update);
   const nonIso = p.energy.mode !== "isothermal";
   const tu = TIME_LABEL[p.timeUnit];
+  // Cambiar la unidad convierte A, k, UA, caudal y tiempos: el reactor sigue siendo el mismo.
+  const setTimeUnit = (v: TimeUnit) => update((d) => void Object.assign(d, convertTimeUnit(d, v)));
   const reactants = p.species.filter((s) => s.nu < 0);
   const products = p.species.filter((s) => s.nu > 0);
 
@@ -172,6 +179,7 @@ export function ParamsPanel() {
             { value: "direct", label: "k constante", disabled: nonIso },
           ]}
         />
+        <Segmented label="Unidad de tiempo" value={p.timeUnit} onChange={setTimeUnit} options={TIME_OPTIONS} />
         {p.kinetics.mode === "direct" ? (
           <NumberField
             label="Constante de velocidad k"
@@ -358,14 +366,10 @@ export function ParamsPanel() {
           />
         )}
         <SelectField
-          label="Unidad de tiempo (debe coincidir con la de k)"
+          label="Unidad de tiempo (al cambiarla se convierten A, k, UA, caudal y tiempos)"
           value={p.timeUnit}
-          options={[
-            { value: "s", label: "segundos" },
-            { value: "min", label: "minutos" },
-            { value: "h", label: "horas" },
-          ]}
-          onChange={(v) => update((d) => void (d.timeUnit = v as ReactorParams["timeUnit"]))}
+          options={TIME_OPTIONS}
+          onChange={(v) => setTimeUnit(v as TimeUnit)}
         />
       </Section>
 

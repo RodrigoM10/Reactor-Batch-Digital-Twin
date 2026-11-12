@@ -1,5 +1,6 @@
 import { loadMlp, type Mlp, type MlpJson } from "./mlp";
 import type { ReactorParams } from "./types";
+import { convertTimeUnit } from "./units";
 
 /**
  * Mapa de operación segura con el modelo sustituto entrenado en ml/scripts/train_risk_surrogate.py.
@@ -110,15 +111,20 @@ export function riskGrid(
   return { nx, ny, xs, ys, tMax, rise, elapsedMs: t1 - t0 };
 }
 
-/** ¿Los parámetros del reactor coinciden con el caso para el que se entrenó el sustituto? */
+/**
+ * ¿Los parámetros del reactor coinciden con el caso para el que se entrenó el sustituto?
+ * Se comparan en la unidad de tiempo de la referencia y con 10 cifras, para que un cambio de unidad
+ * (o una ida y vuelta min → s → min) no invalide el mapa por redondeo.
+ */
 export function matchesSurrogate(p: ReactorParams, reference: ReactorParams): boolean {
+  const r10 = (v: number) => Number(v.toPrecision(10));
   const key = (q: ReactorParams) =>
     JSON.stringify({
-      s: q.species.map((s) => [s.id, s.nu, s.C0, s.Cp, s.order]),
-      k: [q.kinetics.mode, q.kinetics.A, q.kinetics.E],
-      h: q.deltaH,
+      s: q.species.map((s) => [s.id, s.nu, r10(s.C0), r10(s.Cp), r10(s.order)]),
+      k: [q.kinetics.mode, r10(q.kinetics.A), r10(q.kinetics.E)],
+      h: r10(q.deltaH),
       r: q.reversible,
-      e: [q.energy.mode, q.energy.V, q.energy.Cp_c],
+      e: [q.energy.mode, r10(q.energy.V), r10(q.energy.Cp_c)],
     });
-  return key(p) === key(reference);
+  return key(convertTimeUnit(p, reference.timeUnit)) === key(reference);
 }

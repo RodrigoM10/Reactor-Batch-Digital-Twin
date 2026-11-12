@@ -87,7 +87,7 @@ La versión de la tesis se conserva sin cambios como trabajo académico:
    - *Reversible exotérmica (van't Hoff):* A ⇌ B adiabática. El equilibrio cae al subir T.
 2. Ajustá los parámetros en el **panel lateral**:
    - **Reacción:** N especies con coeficientes, órdenes directo e inverso, reversible o no y especie clave (la que define la conversión X).
-   - **Cinética:** k directa o Arrhenius (A, E).
+   - **Cinética:** k directa o Arrhenius (A, E), y la **unidad de tiempo** (s, min u h). Cambiar la unidad convierte A, k, UA, el caudal y los tiempos: el reactor es el mismo y solo cambia la unidad en que se lo ve. En la tesis la unidad era solo una etiqueta.
    - **Equilibrio:** K directa, van't Hoff (K de referencia a T de referencia) o Gibbs (ΔG°f de cada especie).
    - **Operación térmica:** isotérmico, adiabático, **ICQ** (intercambiador de la tesis) o **camisa** (UA·(T − T_cool)), con volumen, temperatura y caudal del refrigerante.
    - **Tiempo y corte:** hasta completar, tiempo fijo o conversión objetivo.
@@ -235,6 +235,9 @@ Al reescribir el motor se revisó el de la tesis y se corrigieron, por diseño, 
 
 | Fecha | Novedad |
 |---|---|
+| 2026-11-12 | Corrección F11: van't Hoff usa el ΔH de la reacción escrita (a·ΔH). Cambia el resultado solo si a ≠ 1. |
+| 2026-11-12 | Marco teórico ordenado en `docs/teoria.md`: ecuaciones de la tesis en LaTeX, correspondencia con el código y notas de corrección. |
+| 2026-11-12 | Unidad de tiempo seleccionable en Cinética: convierte A, k, UA, el caudal y los tiempos. |
 | 2026-11-12 | **Release v1.0.** La portada suma las herramientas de datos. El modelo híbrido se prototipó y quedó para una versión futura. |
 | 2026-11-12 | App publicada en https://reactor-batch-digital-twin.vercel.app/ y código en GitHub. |
 | 2026-11-12 | Primera versión del archivo. Incluye el simulador 2.0 y las fases 1 a 4 de ML: motor espejo y planta virtual, *Calibrar*, *Riesgo* y *En vivo*. |

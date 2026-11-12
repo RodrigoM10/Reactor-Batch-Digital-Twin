@@ -3,7 +3,7 @@
 import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, Target } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { PRESETS } from "@/engine";
+import { convertTimeUnit, PRESETS } from "@/engine";
 import {
   applyOperatingPoint,
   FEATURE_INFO,
@@ -62,8 +62,10 @@ export function RiskMapView() {
   }, []);
 
   const reference = PRESETS.find((p) => p.id === (model?.meta.preset ?? "runaway"))!.params;
+  // El sustituto trabaja en la unidad de tiempo de su caso (min); el usuario puede tener otra.
+  const pRef = convertTimeUnit(params, reference.timeUnit);
   const valid = matchesSurrogate(params, reference);
-  const op = operatingPoint(params);
+  const op = operatingPoint(pRef);
   const others = FEATURES.filter((f) => f !== xf && f !== yf);
 
   const grid = useMemo(() => (model && valid ? riskGrid(model, op, xf, yf, NX, NY) : null), [model, valid, xf, yf, op.T0, op.T_cool, op.ln_m_c, op.ln_UA]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -91,7 +93,8 @@ export function RiskMapView() {
     ctx.putImageData(img, 0, 0);
   }, [grid, model]);
 
-  const setPoint = (patch: Partial<Record<RiskFeature, number>>) => replace(applyOperatingPoint(params, { ...op, ...patch }));
+  const setPoint = (patch: Partial<Record<RiskFeature, number>>) => 
+    replace(convertTimeUnit(applyOperatingPoint(pRef, { ...op, ...patch }), params.timeUnit));
 
   const range = (f: RiskFeature) => model!.meta.ranges[f];
   const frac = (f: RiskFeature, v: number) => (v - range(f)[0]) / (range(f)[1] - range(f)[0]);
@@ -119,7 +122,7 @@ export function RiskMapView() {
     try {
       const t0 = performance.now();
       const exact = await api.current.exactTmax(
-        pts.map((p) => applyOperatingPoint(params, p.pt)),
+        pts.map((p) => applyOperatingPoint(pRef, p.pt)),
         model.meta.horizon_min,
       );
       const res = pts.map((p, k) => {
