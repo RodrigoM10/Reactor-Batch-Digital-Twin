@@ -1,6 +1,6 @@
 # Reactor Batch 2.0 · Contexto para generar la presentación
 
-> **Última actualización:** 2026-11-12 · Fases 1 a 4 de la capa de ML terminadas.
+> **Última actualización:** 2026-11-12 · Release v1.0: simulador + Calibrar, Riesgo y En vivo.
 > Este archivo se mantiene al día con cada funcionalidad nueva (ver la sección *Registro de actualizaciones* al final).
 
 ---
@@ -119,7 +119,7 @@ La versión de la tesis se conserva sin cambios como trabajo académico:
 4. **Resultado:**
    - Curva medida, modelo nominal y modelo ajustado superpuestos.
    - Tabla con cada parámetro *nominal*, *ajustado ± σ* y la **verdad oculta de la planta**, para comprobar que el ajuste la recupera.
-   - Si el χ² es alto, la app avisa que hay efectos que el modelo no incluye. Ese es justamente el caso de uso del próximo modelo híbrido.
+   - Si el χ² es alto, la app avisa que hay algo que el modelo no incluye: efectos físicos (ΔCp, desactivación, pérdidas de calor) o un termómetro con retardo que recorta los picos. En la *Planta realista 1*, la mayor parte de la diferencia viene del retardo del termómetro.
 5. **Usar los parámetros ajustados en el simulador** con un clic.
 
 **Validación:** el ajuste se comparó con `scipy.optimize.least_squares` sobre las mismas corridas.
@@ -210,10 +210,9 @@ Al reescribir el motor se revisó el de la tesis y se corrigieron, por diseño, 
 
 ## 7. Próximamente
 
-- **Modelo híbrido física + ML (fase 5):** una red aprende lo que el balance no explica (desactivación, pérdidas de calor) y se suma al modelo físico. Así se cierra la brecha que muestra el aviso de χ² alto en *Calibrar*.
 - **Asistente con IA:** explica los resultados en lenguaje natural y permite configurar casos describiéndolos con palabras.
+- **Modelo híbrido física + ML:** una red que aprende lo que el balance no explica y se suma al modelo físico. Ya hay un prototipo: contra la temperatura real de la planta virtual bajó el error de 0.45 K a 0.01 K. Quedó fuera de la v1.0 porque, para mostrarlo con datos medidos, también hay que modelar el retardo del termómetro.
 - **Múltiples reacciones simultáneas.**
-- **Publicación** de la app 2.0 en la web.
 
 ---
 
@@ -228,7 +227,7 @@ Al reescribir el motor se revisó el de la tesis y se corrigieron, por diseño, 
 7. **Mapa de riesgo.** Una red neuronal predice la T máxima de 24 000 escenarios y dibuja la frontera de runaway (99.4 % de acierto). *Imagen:* mapa de calor.
 8. **En vivo.** Física contra ML pronosticando un runaway antes de que pase. *Imagen:* corrida con runaway y alarma.
 9. **Rigor.** Lo que se corrigió de la tesis y cómo se valida todo. *Imagen:* tabla de correcciones o el ejemplo 0.48 → 0.35.
-10. **Qué sigue.** Modelo híbrido, asistente con IA y link a la app y al código. *Imagen:* captura general con el header de las 4 secciones.
+10. **Qué sigue.** Asistente con IA, modelo híbrido y link a la app (https://reactor-batch-digital-twin.vercel.app/) y al código. *Imagen:* captura general con el header de las 4 secciones.
 
 ---
 
@@ -236,5 +235,6 @@ Al reescribir el motor se revisó el de la tesis y se corrigieron, por diseño, 
 
 | Fecha | Novedad |
 |---|---|
+| 2026-11-12 | **Release v1.0.** La portada suma las herramientas de datos. El modelo híbrido se prototipó y quedó para una versión futura. |
 | 2026-11-12 | App publicada en https://reactor-batch-digital-twin.vercel.app/ y código en GitHub. |
 | 2026-11-12 | Primera versión del archivo. Incluye el simulador 2.0 y las fases 1 a 4 de ML: motor espejo y planta virtual, *Calibrar*, *Riesgo* y *En vivo*. |

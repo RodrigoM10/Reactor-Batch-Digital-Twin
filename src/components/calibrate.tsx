@@ -395,7 +395,7 @@ export function Calibrate() {
                   <p className="flex items-start gap-1.5 text-warn">
                     <AlertTriangle className="mt-0.5 size-3.5 shrink-0" />
                     χ² alto: el modelo no explica bien los datos. Puede haber efectos que el modelo no incluye (ΔCp,
-                    desactivación, pérdidas de calor); es el caso de uso del modelo híbrido física + ML.
+                    desactivación, pérdidas de calor) o un termómetro con retardo, que recorta los picos de temperatura.
                   </p>
                 )}
                 <p>

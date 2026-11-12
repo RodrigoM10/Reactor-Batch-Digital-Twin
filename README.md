@@ -1,6 +1,10 @@
 # ⚗️ Reactor Batch 2.0 · Gemelo digital
 
-Simulador de reactores batch (TAD – Tanque Agitado Discontinuo) en tiempo real. Es la versión reversionada del trabajo final **«Modelado y Simulación de un Reactor Batch en Python»** (Rodrigo Mendoza, 2025). La versión de la tesis se conserva sin cambios:
+Simulador de reactores batch (TAD – Tanque Agitado Discontinuo) en tiempo real, con herramientas de datos y machine learning. Es la versión reversionada del trabajo final **«Modelado y Simulación de un Reactor Batch en Python»** (Rodrigo Mendoza, 2025).
+
+**App:** https://reactor-batch-digital-twin.vercel.app/
+
+La versión de la tesis se conserva sin cambios:
 
 - Front de la tesis: https://github.com/RodrigoM10/Batch-Reactor-Front (https://batch-reactor-front.vercel.app/)
 - Motor de la tesis: https://github.com/RodrigoM10/Batch-Reactor-Simulate
@@ -12,6 +16,17 @@ Simulador de reactores batch (TAD – Tanque Agitado Discontinuo) en tiempo real
 - **Funciones generalizadas**: admite N especies con coeficientes arbitrarios, órdenes de ley de potencias, reactivos en exceso, inertes y elección de la especie clave. Se suman la camisa a temperatura constante y un volumen de mezcla explícito.
 - **Nuevas herramientas de análisis**: diagrama X–T (con equilibrio, recta adiabática y T óptima), gráfico de Levenspiel, calor generado y removido, exportación CSV y escenarios compartibles por enlace.
 - **Compatibilidad**: importa directamente un `sim_params.json` de la tesis.
+
+## Pantallas
+
+| Ruta | Qué hace |
+|---|---|
+| `/simulador` | Gemelo digital: parámetros, esquema animado, gráficos (concentraciones, conversión, temperatura, calor, X–T, Levenspiel), CSV y enlace compartible |
+| `/calibrar` | Ajuste de k, E, ΔH y UA a datos medidos (Levenberg–Marquardt) con intervalos de confianza; corridas de la planta virtual o CSV propio |
+| `/riesgo` | Mapa de operación segura: una red sustituta predice T_max y la frontera de runaway; verificación contra el motor |
+| `/en-vivo` | Pronóstico de una corrida en curso: red neuronal contra física + datos (Monte Carlo), con alarma de runaway |
+
+Las tres herramientas de datos se apoyan en una **planta virtual** (`ml/`): un reactor simulado con parámetros ocultos, ruido, retardo del termómetro y efectos que el modelo no incluye (ΔCp, desactivación, pérdidas al ambiente). Los modelos de ML se entrenan offline en Python y se exportan como JSON (`public/models/`); el navegador los evalúa en TypeScript (`src/engine/mlp.ts`).
 
 ### Diferencias de modelo con la v1
 
@@ -46,19 +61,39 @@ npm run build
 
 Cada caso se marca como `match` (la 2.0 debe coincidir con la v1) o `divergent` (la diferencia está documentada y tiene su motivo).
 
+### Capa de ML (Python, offline)
+
+Solo hace falta para regenerar datos o reentrenar modelos; la app publicada no usa Python.
+
+```bash
+cd ml
+python -m venv .venv
+.venv/Scripts/python -m pip install numpy scipy pandas scikit-learn pytest
+.venv/Scripts/python -m pytest                       # paridad con el motor TypeScript y planta virtual
+cd ..
+ml/.venv/Scripts/python -B ml/scripts/make_fit_fixtures.py      # corridas de la planta para Calibrar
+ml/.venv/Scripts/python -B ml/scripts/train_risk_surrogate.py   # modelo de /riesgo
+ml/.venv/Scripts/python -B ml/scripts/train_forecaster.py       # modelos de /en-vivo
+```
+
+Después de reentrenar, `npx vitest run` verifica que la red en TypeScript dé lo mismo que en NumPy.
+
 ## Estructura
 
 ```
-src/engine/       motor puro (sin React): modelo, integradores, análisis, presets, compatibilidad v1
+src/engine/       motor puro (sin React): modelo, integradores, análisis, ajuste, redes, pronóstico, presets
 src/workers/      Web Worker que expone el motor con Comlink
-src/components/   simulador, panel de parámetros, esquema del reactor, gráficos
-src/app/          portada (/) y simulador (/simulador)
-tests/engine/     pruebas del motor
+src/components/   simulador, calibración, mapa de riesgo, modo en vivo, gráficos, esquema del reactor
+src/app/          portada (/), /simulador, /calibrar, /riesgo, /en-vivo
+public/models/    redes entrenadas (JSON) · public/data/ corridas de la planta virtual
+ml/               motor Python espejo, planta virtual y scripts de entrenamiento
+tests/engine/     pruebas del motor (analíticas, contra la v1, paridad con Python, ML)
 tools/            generador de casos de referencia desde la v1
+docs/             contexto para la presentación del proyecto
 ```
 
 ## Próximamente
 
+- Modelo híbrido física + ML: una red que aprenda lo que el balance no explica, entrenada con datos medidos.
 - Asistente con IA que explique los resultados y permita configurar casos en lenguaje natural.
-- Ajuste de parámetros cinéticos a partir de datos experimentales.
 - Múltiples reacciones simultáneas.

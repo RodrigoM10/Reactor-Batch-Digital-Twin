@@ -1,7 +1,10 @@
 import {
+  Activity,
   ArrowRight,
   Bot,
   Cpu,
+  Crosshair,
+  Map as MapIcon,
   FlaskConical,
   GitCompareArrows,
   LineChart,
@@ -14,7 +17,7 @@ import { HeroReactor } from "@/components/hero-reactor";
 import { SiteHeader } from "@/components/site-header";
 import { V1_BACK_REPO, V1_FRONT_REPO, V1_URL } from "@/lib/site";
 
-const FEATURES = [
+const FEATURES: { icon: typeof Zap; title: string; text: string; href?: string }[] = [
   {
     icon: Zap,
     title: "Resultados al instante",
@@ -34,6 +37,24 @@ const FEATURES = [
     icon: LineChart,
     title: "Nuevas herramientas de análisis",
     text: "Diagrama conversión–temperatura con equilibrio, recta adiabática y curva de T óptima; gráfico de Levenspiel; calor generado y removido.",
+  },
+  {
+    icon: Crosshair,
+    title: "Calibrar con datos",
+    text: "Cargá una corrida medida y ajustá k, E, ΔH y UA con Levenberg–Marquardt, con su incertidumbre y la comparación contra el modelo nominal.",
+    href: "/calibrar",
+  },
+  {
+    icon: MapIcon,
+    title: "Mapa de riesgo",
+    text: "Una red neuronal entrenada con 24 000 simulaciones dibuja al instante la frontera de runaway según T₀, refrigerante y UA.",
+    href: "/riesgo",
+  },
+  {
+    icon: Activity,
+    title: "Pronóstico en vivo",
+    text: "Una corrida llega dato a dato y dos métodos, ML y física + datos, pronostican la temperatura y avisan antes del runaway.",
+    href: "/en-vivo",
   },
   {
     icon: ShieldCheck,
@@ -104,13 +125,27 @@ export default function Home() {
           <div className="mx-auto max-w-6xl px-4 py-14">
             <h2 className="text-2xl font-semibold">Qué hay de nuevo</h2>
             <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-              {FEATURES.map(({ icon: Icon, title, text }) => (
-                <div key={title} className="rounded-xl border border-border bg-bg p-5">
-                  <Icon className="size-5 text-accent" />
-                  <h3 className="mt-3 font-semibold">{title}</h3>
-                  <p className="mt-1.5 text-sm text-muted">{text}</p>
-                </div>
-              ))}
+              {FEATURES.map(({ icon: Icon, title, text, href }) => {
+                const body = (
+                  <>
+                    <Icon className="size-5 text-accent" />
+                    <h3 className="mt-3 flex items-center gap-1.5 font-semibold">
+                      {title}
+                      {href && <ArrowRight className="size-3.5 text-muted" />}
+                    </h3>
+                    <p className="mt-1.5 text-sm text-muted">{text}</p>
+                  </>
+                );
+                return href ? (
+                  <Link key={title} href={href} className="rounded-xl border border-border bg-bg p-5 transition-colors hover:border-accent">
+                    {body}
+                  </Link>
+                ) : (
+                  <div key={title} className="rounded-xl border border-border bg-bg p-5">
+                    {body}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -153,8 +188,9 @@ export default function Home() {
             <div>
               <h2 className="font-semibold">Próximamente: asistente con inteligencia artificial</h2>
               <p className="mt-1 text-sm text-muted">
-                Explicación de resultados en lenguaje natural, configuración de casos describiéndolos en palabras y
-                ajuste de parámetros cinéticos a partir de datos experimentales.
+                Explicación de resultados en lenguaje natural y configuración de casos describiéndolos en palabras.
+                Más adelante: un modelo híbrido física + ML entrenado con datos medidos y múltiples reacciones
+                simultáneas.
               </p>
             </div>
           </div>
