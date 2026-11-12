@@ -1,26 +1,150 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Tokens de color: claro por defecto, oscuro por preferencia del sistema o por data-theme. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #eef2f5;
+  --border: #d9e0e6;
+  --text: #0f1b24;
+  --muted: #5b6b78;
+  --accent: #0e7c86;
+  --accent-soft: #d5eff1;
+  --heat: #d9480f;
+  --cool: #1c7ed6;
+  --ok: #2b8a3e;
+  --warn: #c77700;
+  --danger: #c92a2a;
+  --grid: #e3e8ec;
+  --liquid-cold: #4dabf7;
+  --liquid-hot: #f03e3e;
+  --series-1: #0e7c86;
+  --series-2: #d9480f;
+  --series-3: #7048e8;
+  --series-4: #2b8a3e;
+  --series-5: #c2255c;
+  --series-6: #5c7cfa;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1218;
+    --surface: #111b23;
+    --surface-2: #17242e;
+    --border: #23333f;
+    --text: #e6edf2;
+    --muted: #8fa1ae;
+    --accent: #3bc9db;
+    --accent-soft: #0f3a40;
+    --heat: #ff8a4c;
+    --cool: #4dabf7;
+    --ok: #51cf66;
+    --warn: #fcc419;
+    --danger: #ff6b6b;
+    --grid: #1d2b35;
+    --series-1: #3bc9db;
+    --series-2: #ff8a4c;
+    --series-3: #9775fa;
+    --series-4: #69db7c;
+    --series-5: #f06595;
+    --series-6: #748ffc;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #0b1218;
+  --surface: #111b23;
+  --surface-2: #17242e;
+  --border: #23333f;
+  --text: #e6edf2;
+  --muted: #8fa1ae;
+  --accent: #3bc9db;
+  --accent-soft: #0f3a40;
+  --heat: #ff8a4c;
+  --cool: #4dabf7;
+  --ok: #51cf66;
+  --warn: #fcc419;
+  --danger: #ff6b6b;
+  --grid: #1d2b35;
+  --series-1: #3bc9db;
+  --series-2: #ff8a4c;
+  --series-3: #9775fa;
+  --series-4: #69db7c;
+  --series-5: #f06595;
+  --series-6: #748ffc;
+  color-scheme: dark;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-heat: var(--heat);
+  --color-cool: var(--cool);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --color-danger: var(--danger);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Animaciones del esquema del reactor */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes bubble {
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateY(-120px);
+    opacity: 0;
+  }
+}
+@keyframes flow {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+input[type="range"] {
+  accent-color: var(--accent);
 }

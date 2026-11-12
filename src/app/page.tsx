@@ -1,69 +1,182 @@
-import Image from "next/image";
+import {
+  ArrowRight,
+  Bot,
+  Cpu,
+  FlaskConical,
+  GitCompareArrows,
+  LineChart,
+  ShieldCheck,
+  SlidersHorizontal,
+  Zap,
+} from "lucide-react";
+import Link from "next/link";
+import { HeroReactor } from "@/components/hero-reactor";
+import { SiteHeader } from "@/components/site-header";
+import { V1_BACK_REPO, V1_FRONT_REPO, V1_URL } from "@/lib/site";
+
+const FEATURES = [
+  {
+    icon: Zap,
+    title: "Resultados al instante",
+    text: "El motor corre en tu navegador. Sin servidor que despertar: cada cambio se recalcula en milisegundos.",
+  },
+  {
+    icon: SlidersHorizontal,
+    title: "Gemelo digital interactivo",
+    text: "Mové la temperatura, el caudal de refrigerante o la cinética y mirá cómo responde el reactor en vivo, con reproducción del batch.",
+  },
+  {
+    icon: FlaskConical,
+    title: "Cinética generalizada",
+    text: "N especies, coeficientes y órdenes arbitrarios (ley de potencias), reactivos en exceso, inertes y elección de la especie clave.",
+  },
+  {
+    icon: LineChart,
+    title: "Nuevas herramientas de análisis",
+    text: "Diagrama conversión–temperatura con equilibrio, recta adiabática y curva de T óptima; gráfico de Levenspiel; calor generado y removido.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Validado contra la tesis",
+    text: "Pruebas automáticas contra soluciones analíticas y contra el motor Python original, con las diferencias documentadas.",
+  },
+  {
+    icon: Cpu,
+    title: "Integradores propios",
+    text: "Dormand–Prince 5(4) con salida densa y eventos, y Rosenbrock para casos rígidos como el descontrol térmico.",
+  },
+];
+
+const DIFFS = [
+  ["Velocidad inversa", "Usaba C_C·C_D con el signo estequiométrico cambiado; para A ⇌ B valía cero.", "−r = k·(Π Cᵢ^αᵢ − Π Cⱼ^βⱼ / K_c), coherente con K_eq."],
+  ["Equilibrio con intercambiador (ICQ)", "Al llegar a X_eq se congelaban X y también T.", "El equilibrio surge de la cinética; el intercambiador sigue actuando."],
+  ["Volumen en el balance de energía", "Implícito en 1 L.", "Volumen de mezcla V explícito."],
+  ["Corte de la integración", "Adiabático hasta t = 50 000 con paso 1 (segundos de cálculo).", "Eventos: conversión objetivo o reacción completa (milisegundos)."],
+  ["Unidades de tiempo", "La producción en kg/min se mezclaba con tiempos en segundos.", "Unidad de tiempo explícita; producción en kg/h convertida."],
+  ["Precisión numérica", "Tolerancia por defecto de SciPy (rtol = 1e-3).", "rtol = 1e-8, verificada contra soluciones analíticas."],
+];
 
 export default function Home() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <div className="flex min-h-screen flex-col">
+      <SiteHeader />
+
+      <main className="flex-1">
+        <section className="mx-auto grid max-w-6xl items-center gap-10 px-4 py-14 md:grid-cols-[1.1fr_1fr] md:py-20">
+          <div>
+            <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs text-muted">
+              <span className="size-1.5 rounded-full bg-ok" /> Versión 2.0 · reversionada
+            </p>
+            <h1 className="text-4xl leading-tight font-bold tracking-tight md:text-5xl">
+              El reactor batch, <span className="text-accent">en tiempo real</span>.
+            </h1>
+            <p className="mt-4 max-w-xl text-lg text-muted">
+              Gemelo digital de un Tanque Agitado Discontinuo: balances de materia y energía, equilibrio químico y
+              dimensionamiento, con un motor nuevo que corre en tu navegador. Construido sobre las bases de la tesis
+              «Modelado y Simulación de un Reactor Batch en Python».
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/simulador"
+                className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 font-medium text-white hover:opacity-90 dark:text-bg"
+              >
+                Abrir el simulador <ArrowRight className="size-4" />
+              </Link>
+              <a
+                href={V1_URL}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-5 py-2.5 font-medium hover:border-accent hover:text-accent"
+              >
+                Ver la versión de la tesis
+              </a>
+            </div>
+          </div>
+          <div className="mx-auto w-full max-w-md rounded-2xl border border-border bg-surface p-4 shadow-sm">
+            <div className="aspect-[34/30]">
+              <HeroReactor />
+            </div>
+            <p className="text-center text-xs text-muted">Reacción exotérmica adiabática calculada en vivo por el motor 2.0</p>
+          </div>
+        </section>
+
+        <section className="border-y border-border bg-surface">
+          <div className="mx-auto max-w-6xl px-4 py-14">
+            <h2 className="text-2xl font-semibold">Qué hay de nuevo</h2>
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {FEATURES.map(({ icon: Icon, title, text }) => (
+                <div key={title} className="rounded-xl border border-border bg-bg p-5">
+                  <Icon className="size-5 text-accent" />
+                  <h3 className="mt-3 font-semibold">{title}</h3>
+                  <p className="mt-1.5 text-sm text-muted">{text}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 py-14">
+          <div className="flex items-center gap-2">
+            <GitCompareArrows className="size-5 text-accent" />
+            <h2 className="text-2xl font-semibold">De la tesis a la 2.0</h2>
+          </div>
+          <p className="mt-2 max-w-3xl text-muted">
+            La versión de la tesis se conserva sin cambios como trabajo académico. La 2.0 mantiene su modelo (balances,
+            Arrhenius, Van&apos;t Hoff, Gibbs, intercambiador ICQ y dimensionamiento) y corrige por diseño los puntos
+            detectados al revisarla.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          <div className="mt-6 overflow-x-auto rounded-xl border border-border">
+            <table className="w-full min-w-[640px] text-left text-sm">
+              <thead className="bg-surface-2 text-xs text-muted">
+                <tr>
+                  <th className="px-4 py-2.5 font-medium">Aspecto</th>
+                  <th className="px-4 py-2.5 font-medium">Tesis (v1)</th>
+                  <th className="px-4 py-2.5 font-medium">Versión 2.0</th>
+                </tr>
+              </thead>
+              <tbody>
+                {DIFFS.map(([a, v1, v2]) => (
+                  <tr key={a} className="border-t border-border bg-surface align-top">
+                    <td className="px-4 py-3 font-medium">{a}</td>
+                    <td className="px-4 py-3 text-muted">{v1}</td>
+                    <td className="px-4 py-3">{v2}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-6xl px-4 pb-16">
+          <div className="flex flex-col gap-4 rounded-2xl border border-border bg-surface p-6 md:flex-row md:items-center">
+            <Bot className="size-8 shrink-0 text-accent" />
+            <div>
+              <h2 className="font-semibold">Próximamente: asistente con inteligencia artificial</h2>
+              <p className="mt-1 text-sm text-muted">
+                Explicación de resultados en lenguaje natural, configuración de casos describiéndolos en palabras y
+                ajuste de parámetros cinéticos a partir de datos experimentales.
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
+
+      <footer className="border-t border-border bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-sm text-muted md:flex-row md:items-center md:justify-between">
+          <p>
+            Rodrigo Mendoza · Ingeniería Química · Trabajo final «Modelado y Simulación de un Reactor Batch en Python»
+            (2025)
+          </p>
+          <div className="flex gap-4">
+            <a href={V1_FRONT_REPO} target="_blank" rel="noreferrer" className="hover:text-text">
+              Front tesis
+            </a>
+            <a href={V1_BACK_REPO} target="_blank" rel="noreferrer" className="hover:text-text">
+              Motor tesis
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }
