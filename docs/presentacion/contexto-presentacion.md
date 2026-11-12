@@ -235,6 +235,7 @@ Al reescribir el motor se revisó el de la tesis y se corrigieron, por diseño, 
 
 | Fecha | Novedad |
 |---|---|
+| 2026-11-12 | Marco teórico ordenado en `docs/teoria.md`: ecuaciones de la tesis en LaTeX, correspondencia con el código y notas de corrección. |
 | 2026-11-12 | **Release v1.0.** La portada suma las herramientas de datos. El modelo híbrido se prototipó y quedó para una versión futura. |
 | 2026-11-12 | App publicada en https://reactor-batch-digital-twin.vercel.app/ y código en GitHub. |
 | 2026-11-12 | Primera versión del archivo. Incluye el simulador 2.0 y las fases 1 a 4 de ML: motor espejo y planta virtual, *Calibrar*, *Riesgo* y *En vivo*. |
