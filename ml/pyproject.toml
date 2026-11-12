@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 dependencies = ["numpy", "scipy", "pandas", "scikit-learn"]
 
 [project.optional-dependencies]
-train = ["torch", "onnx", "skl2onnx"]
+train = ["torch"]
 dev = ["pytest"]
 
 [tool.pytest.ini_options]

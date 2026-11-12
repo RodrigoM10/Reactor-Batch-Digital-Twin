@@ -10,6 +10,7 @@ import { V1_URL } from "@/lib/site";
 export const MODULES = [
   { href: "/simulador", label: "Simular" },
   { href: "/calibrar", label: "Calibrar" },
+  { href: "/riesgo", label: "Riesgo" },
 ];
 
 export function SiteHeader({ children }: { children?: ReactNode }) {

@@ -17,6 +17,15 @@ const api = {
   fit(params: ReactorParams, data: Measurements, opts: FitOptions): FitResult {
     return fitParameters(params, data, opts);
   },
+  /** T_max exacta (motor) para varios reactores, con horizonte fijo: verificación del sustituto. */
+  exactTmax(list: ReactorParams[], horizon: number): number[] {
+    return list.map((params) => {
+      const p = structuredClone(params);
+      p.stop = { ...p.stop, mode: "time", t_final: horizon };
+      const r = simulate(p, { samples: 1500 });
+      return r.ok ? r.summary.T_max : NaN;
+    });
+  },
   simulateAt(params: ReactorParams, times: number[]): SimResult {
     const p = structuredClone(params);
     p.stop = { ...p.stop, mode: "time", t_final: Math.max(...times) };
