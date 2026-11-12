@@ -1,0 +1,14 @@
+[project]
+name = "reactor-ml"
+version = "0.1.0"
+description = "Capa de ML de Reactor Batch 2.0: motor Python espejo, planta virtual y entrenamiento offline"
+requires-python = ">=3.12"
+dependencies = ["numpy", "scipy", "pandas", "scikit-learn"]
+
+[project.optional-dependencies]
+train = ["torch", "onnx", "skl2onnx"]
+dev = ["pytest"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
