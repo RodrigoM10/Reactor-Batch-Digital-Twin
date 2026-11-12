@@ -235,6 +235,7 @@ Al reescribir el motor se revisó el de la tesis y se corrigieron, por diseño, 
 
 | Fecha | Novedad |
 |---|---|
+| 2026-11-12 | Corrección F11: van't Hoff usa el ΔH de la reacción escrita (a·ΔH). Cambia el resultado solo si a ≠ 1. |
 | 2026-11-12 | Marco teórico ordenado en `docs/teoria.md`: ecuaciones de la tesis en LaTeX, correspondencia con el código y notas de corrección. |
 | 2026-11-12 | Unidad de tiempo seleccionable en Cinética: convierte A, k, UA, el caudal y los tiempos. |
 | 2026-11-12 | **Release v1.0.** La portada suma las herramientas de datos. El modelo híbrido se prototipó y quedó para una versión futura. |

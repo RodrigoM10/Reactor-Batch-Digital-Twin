@@ -6,7 +6,7 @@ Este documento es la referencia teórica de Reactor Batch 2.0. Ordena el Capítu
 - Cada sección indica dónde vive la ecuación en el motor 2.0 (`src/engine/`).
 - Las correcciones al texto de la tesis van en bloques **Nota 2.0**. Las erratas de redacción se corrigieron directamente.
 - El texto original, tal como salió del Word, está en [`teoria-tesis-v1.md`](teoria-tesis-v1.md).
-- Las diferencias de modelo F1–F10 son las de la tabla del [README](../README.md#diferencias-de-modelo-con-la-v1).
+- Las diferencias de modelo F1–F11 son las de la tabla del [README](../README.md#diferencias-de-modelo-con-la-v1).
 
 ---
 
@@ -210,7 +210,7 @@ $$\ln\frac{K_c(T)}{K_c(T_{ref})} = -\frac{\Delta H^0_{rxn}}{R}\left(\frac{1}{T} 
 
 $$K_c(T) = K_c(T_{ref})\,\exp\!\left[\frac{\Delta H^0_{rxn}}{R}\left(\frac{1}{T_{ref}} - \frac{1}{T}\right)\right] \tag{35}$$
 
-> **Nota 2.0:** en la Ec. 35, $\Delta H^0_{rxn}$ es por **reacción tal como está escrita** en la Ec. 30, es decir, por $a$ moles de A. El modelo guarda $\Delta H$ por mol de A. Ambos coinciden si $a = 1$. Si $a \ne 1$, lo correcto es usar $a\,\Delta H_{rx}$ en la Ec. 35. Hoy la v1 y la 2.0 usan $\Delta H$ por mol de A (pendiente de revisar, ver §11).
+> **Nota 2.0 (F11):** en la Ec. 35, $\Delta H^0_{rxn}$ es por **reacción tal como está escrita** en la Ec. 30, es decir, por $a$ moles de A. El modelo guarda $\Delta H$ por mol de A, así que la 2.0 usa $\Delta H^0_{rxn} = a\,\Delta H_{rx}$. La v1 usaba $\Delta H$ por mol de A. Ambos coinciden si $a = 1$. Con $2A \rightleftharpoons C$, la v1 hacía variar $K_c(T)$ a la mitad de la pendiente correcta.
 
 **En el código:** `equilibriumConstant()` en `model/thermo.ts`, con `method = "direct" | "vant_hoff" | "gibbs"`.
 
@@ -351,7 +351,7 @@ $$V = \frac{P_k\,(t_{reacción} + t_{mcd})}{C_k\,PM_k} \tag{29}$$
 | 13 | Arrhenius con $T_{ref}$ | `rateConstant()` (vía Ec. 12) | Equivalente a la Ec. 12 |
 | 30, 36 | $K_c$ y $X_{eq}$ | `equilibriumConversion()` en `model/kinetics.ts` | Igual |
 | 32-33 | Gibbs | `equilibriumConstant()` en `model/thermo.ts` | Igual |
-| 35 | van't Hoff | `equilibriumConstant()` | Igual. **Pendiente:** $\Delta H$ por mol de A vs. por reacción si $a \ne 1$ |
+| 35 | van't Hoff | `equilibriumConstant()` | **Corregida** si $a \ne 1$: usa $a\,\Delta H$ (F11) |
 | 39, 50 | Balance de energía | `rhs` en `simulate.ts` | V explícito (F3) |
 | 40 | Intercambiador ICQ | `heatRemoved()` en `simulate.ts` | Corregida en el texto: $T_{a1}$ de entrada, signo |
 | 44, 49 | $C_p$ de la mezcla y $\Delta H$ constantes | `mixtureHeatCapacity()` en `model/thermo.ts` | Igual |

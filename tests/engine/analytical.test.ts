@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { compileModel, equilibriumConversion } from "@/engine/model/kinetics";
+import { R, equilibriumConstant } from "@/engine/model/thermo";
 import { PRESETS, species } from "@/engine/presets";
 import { simulate } from "@/engine/simulate";
 import type { ReactorParams, SimOk } from "@/engine/types";
@@ -98,6 +99,20 @@ describe("equilibrio", () => {
     for (const K of [0.1, 1, 2.93, 50]) {
       expect(equilibriumConversion(m, K)).toBeCloseTo(Math.sqrt(K) / (1 + Math.sqrt(K)), 10);
     }
+  });
+
+  it("van't Hoff con 2A ⇌ C: d ln K_c/dT = ΔH_rxn/RT² con ΔH_rxn = |ν_A|·ΔH", () => {
+    const p = iso({
+      reversible: true,
+      species: [species("A", -2, 1), species("C", 1, 0)],
+      equilibrium: { method: "vant_hoff", Keq: 1, Keq_ref: 5000, T_ref: 298 },
+      deltaH: -20000,
+    });
+    const T = 350;
+    const h = 1e-3;
+    const slope = (Math.log(equilibriumConstant(p, T + h)) - Math.log(equilibriumConstant(p, T - h))) / (2 * h);
+    expect(slope).toBeCloseTo((2 * -20000) / (R * T * T), 8);
+    expect(equilibriumConstant(p, 298)).toBeCloseTo(5000, 9);
   });
 
   it("si la especie clave no es limitante, X_max < 1", () => {

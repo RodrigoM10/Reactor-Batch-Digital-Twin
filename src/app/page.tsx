@@ -75,6 +75,7 @@ const DIFFS = [
   ["Corte de la integración", "Adiabático hasta t = 50 000 con paso 1 (segundos de cálculo).", "Eventos: conversión objetivo o reacción completa (milisegundos)."],
   ["Unidades de tiempo", "La producción en kg/min se mezclaba con tiempos en segundos.", "Unidad de tiempo explícita; producción en kg/h convertida."],
   ["Precisión numérica", "Tolerancia por defecto de SciPy (rtol = 1e-3).", "rtol = 1e-8, verificada contra soluciones analíticas."],
+  ["Equilibrio con van't Hoff", "ΔH por mol de A con K_c por reacción: con 2A ⇌ C, K_c(T) variaba a la mitad de la pendiente.", "ΔH de la reacción escrita (a·ΔH); con a = 1 coincide con la tesis."],
 ];
 
 export default function Home() {

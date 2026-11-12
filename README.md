@@ -38,6 +38,7 @@ Las tres herramientas de datos se apoyan en una **planta virtual** (`ml/`): un r
 | F5 · Corte | Adiabático hasta t = 50 000 con `max_step = 1` | Eventos de conversión objetivo y de reacción completa |
 | F7 · Unidades | La producción en kg/min se mezclaba con tiempos en s | Unidad de tiempo explícita y producción en kg/h |
 | F10 · Precisión | `rtol = 1e-3` (por defecto en SciPy) | `rtol = 1e-8`, verificada con soluciones analíticas |
+| F11 · van't Hoff | Usa ΔH por mol de A, aunque K_c es por reacción escrita; si a ≠ 1, K_c(T) varía con la pendiente equivocada | `ΔH_rxn = a·ΔH`; con a = 1 da lo mismo que la v1 |
 
 Ejemplo: para el caso de la tesis (`sim_params.json`, acetato de etilo), la v1 da X = 0.48 a los 120 min y la 2.0 da X = 0.35. La diferencia se debe a F1: en la v1 el término inverso suma velocidad en lugar de restarla.
 
