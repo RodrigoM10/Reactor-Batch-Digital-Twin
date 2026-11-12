@@ -22,6 +22,11 @@ export interface FitOptions {
   sigmaT?: number; // desvío estándar del termómetro [K]
   sigmaX?: number;
   maxIter?: number;
+  /**
+   * Priors gaussianos alrededor de los valores nominales (estimación MAP), en el espacio interno θ:
+   * desvío de ln k, E/1e4, ΔH/1e4 o ln UA. Estabilizan el ajuste con pocos datos (pronóstico en vivo).
+   */
+  priors?: Partial<Record<FitParam, number>>;
 }
 
 export interface FitEstimate {
@@ -45,6 +50,10 @@ export interface FitResult {
   rmseX: number | null;
   iterations: number;
   nPoints: number;
+  /** Espacio interno, para muestrear la incertidumbre (pronóstico por Monte Carlo). */
+  names: FitParam[];
+  theta: number[];
+  cov: number[][];
 }
 
 const LABELS: Record<FitParam, string> = {
@@ -71,7 +80,7 @@ function toTheta(p: ReactorParams, names: FitParam[], Tref: number): number[] {
   });
 }
 
-function fromTheta(base: ReactorParams, names: FitParam[], theta: number[], Tref: number): ReactorParams {
+export function fromTheta(base: ReactorParams, names: FitParam[], theta: number[], Tref: number): ReactorParams {
   const p = structuredClone(base);
   const kref0 = base.kinetics.A * Math.exp(-base.kinetics.E / (R * Tref));
   let lnk = Math.log(kref0);
@@ -149,11 +158,19 @@ export function fitParameters(base: ReactorParams, data: Measurements, opts: Fit
     rmseX: null,
     iterations: 0,
     nPoints,
+    names,
+    theta: [],
+    cov: [],
   });
   if (base.kinetics.mode !== "arrhenius" && names.some((n) => n === "k" || n === "E"))
     return fail("Para ajustar k o E la cinética debe estar en modo Arrhenius.");
   if (!names.length) return fail("Elegí al menos un parámetro para ajustar.");
-  if (nPoints <= names.length) return fail("Hay muy pocos datos para la cantidad de parámetros elegidos.");
+  if (nPoints + (opts.priors ? Object.keys(opts.priors).length : 0) <= names.length)
+    return fail("Hay muy pocos datos para la cantidad de parámetros elegidos.");
+
+  const theta0 = toTheta(base, names, Tref);
+  const priorSd = names.map((n) => opts.priors?.[n]);
+  const nPrior = priorSd.filter((s) => s !== undefined).length;
 
   const residuals = (theta: number[]): number[] | null => {
     const p = fromTheta(base, names, theta, Tref);
@@ -165,11 +182,14 @@ export function fitParameters(base: ReactorParams, data: Measurements, opts: Fit
       if (useT && row.T !== null && Number.isFinite(row.T)) res.push((r.series.T[i] - row.T) / sigmaT);
       if (row.X !== null && Number.isFinite(row.X)) res.push((r.series.X[i] - row.X) / sigmaX);
     });
+    priorSd.forEach((sd, j) => {
+      if (sd !== undefined) res.push((theta[j] - theta0[j]) / sd);
+    });
     return res.every(Number.isFinite) ? res : null;
   };
   const sumSq = (r: number[]) => r.reduce((a, v) => a + v * v, 0);
 
-  let theta = toTheta(base, names, Tref);
+  let theta = [...theta0];
   let r = residuals(theta);
   if (!r) return fail("El modelo no se puede simular con los parámetros iniciales.");
   let cost = sumSq(r);
@@ -236,7 +256,7 @@ export function fitParameters(base: ReactorParams, data: Measurements, opts: Fit
   const JtJ = Array.from({ length: p }, (_, a) =>
     Array.from({ length: p }, (_, b) => J.reduce((s, row) => s + row[a] * row[b], 0)),
   );
-  const dof = Math.max(nPoints - p, 1);
+  const dof = Math.max(nPoints + nPrior - p, 1);
   const chi2red = cost / dof;
   let cov: number[][];
   try {
@@ -297,6 +317,9 @@ export function fitParameters(base: ReactorParams, data: Measurements, opts: Fit
     rmseX: nX ? Math.sqrt(seX / nX) : null,
     iterations: it,
     nPoints,
+    names,
+    theta,
+    cov,
   };
 }
 

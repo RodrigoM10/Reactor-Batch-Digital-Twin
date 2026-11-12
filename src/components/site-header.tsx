@@ -11,6 +11,7 @@ export const MODULES = [
   { href: "/simulador", label: "Simular" },
   { href: "/calibrar", label: "Calibrar" },
   { href: "/riesgo", label: "Riesgo" },
+  { href: "/en-vivo", label: "En vivo" },
 ];
 
 export function SiteHeader({ children }: { children?: ReactNode }) {

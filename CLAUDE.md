@@ -37,3 +37,7 @@ Always use `python -B` for the fixture generator: the v1 repo tracks `__pycache_
 - `tests/engine/analytical.test.ts` and `solvers.test.ts` check against closed-form solutions at about 1e-7.
 - `tests/engine/v1-reference.test.ts` runs every fixture on the v1 time grid. `match` cases must agree within 2e-3 in X. `divergent` cases must still differ, and each has its documented reason, so if one starts matching, investigate.
 - Any change to the model must keep both suites green. If it changes a documented divergence, update the fixture reason, the README table and the landing page `DIFFS` table.
+
+## Presentation context
+
+`docs/presentacion/contexto-presentacion.md` is the context file the author gives to Claude to generate slides. When a phase or feature is finished, update that screen's section (how to use it, metrics, suggested screenshot), the slide script and the *Registro de actualizaciones*. Take metrics from `public/models/*.json`.

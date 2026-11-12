@@ -1,7 +1,7 @@
 """Exporta un MLP (scikit-learn o PyTorch) a JSON para evaluarlo en TypeScript (src/engine/mlp.ts).
 
 Formato:
-{ "activation": "tanh" | "relu", "x_mean": [...], "x_std": [...], "y_mean": float, "y_scale": float,
+{ "output": "identity" | "logistic", "activation": "tanh" | "relu", "x_mean": [...], "x_std": [...], "y_mean": float, "y_scale": float,
   "layers": [ { "W": [[in × out]], "b": [out] }, ... ] }   # la última capa es lineal
 Predicción: y = y_mean + y_scale · f((x − x_mean)/x_std)
 """
@@ -15,12 +15,15 @@ import numpy as np
 
 
 def sklearn_mlp_to_dict(model, x_mean, x_std, y_mean=0.0, y_scale=1.0) -> dict:
+    # MLPClassifier binario usa salida logística; MLPRegressor, identidad.
+    out = "logistic" if getattr(model, "out_activation_", "identity") == "logistic" else "identity"
     return {
+        "output": out,
         "activation": model.activation,
         "x_mean": np.asarray(x_mean, float).tolist(),
         "x_std": np.asarray(x_std, float).tolist(),
-        "y_mean": float(y_mean),
-        "y_scale": float(y_scale),
+        "y_mean": np.asarray(y_mean, float).tolist(),
+        "y_scale": np.asarray(y_scale, float).tolist(),
         "layers": [{"W": W.tolist(), "b": b.tolist()} for W, b in zip(model.coefs_, model.intercepts_)],
     }
 
@@ -33,8 +36,10 @@ def predict(d: dict, X: np.ndarray) -> np.ndarray:
         h = h @ np.array(layer["W"]) + np.array(layer["b"])
         if i < len(d["layers"]) - 1:
             h = act(h)
+    if d.get("output") == "logistic":
+        h = 1 / (1 + np.exp(-h))
     out = h if h.shape[1] > 1 else h[:, 0]
-    return d["y_mean"] + d["y_scale"] * out
+    return np.asarray(d["y_mean"]) + np.asarray(d["y_scale"]) * out
 
 
 def write(d: dict, path: Path, extra: dict | None = None, digits: int = 7) -> None:

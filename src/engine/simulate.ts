@@ -13,6 +13,22 @@ import { validateParams } from "./validate";
 export interface SimulateOptions {
   samples?: number; // puntos uniformes en el tiempo (por defecto 300)
   sampleTimes?: number[]; // tiempos explícitos (usado por las pruebas contra la v1)
+  corrections?: Corrections;
+}
+
+/**
+ * Términos que se suman al modelo de balances (mismo papel que Extras en ml/reactor_ml/engine.py).
+ * Los usan la planta virtual (efectos conocidos) y el modelo híbrido (efectos aprendidos por una red).
+ */
+export interface Corrections {
+  /** Factor multiplicativo sobre −r (desactivación del catalizador, error en A o E). */
+  rateFactor?: (t: number, X: number, T: number) => number;
+  /** ΔH efectivo en función de T (ΔCp ≠ 0) [cal/mol]. */
+  deltaH?: (T: number) => number;
+  /** Calor removido adicional, p. ej. pérdidas al ambiente [cal/tiempo]. */
+  extraHeat?: (T: number) => number;
+  /** Término aditivo sobre dT/dt [K/tiempo]. */
+  dT?: (t: number, X: number, T: number) => number;
 }
 
 const HOURS_PER_UNIT: Record<TimeUnit, number> = { s: 1 / 3600, min: 1 / 60, h: 1 };
@@ -48,16 +64,21 @@ export function simulate(p: ReactorParams, opts: SimulateOptions = {}): SimResul
   const X_max = model.X_max;
   const icqFactor = p.energy.mode === "icq" ? 1 - Math.exp(-UA / (m_c * Cp_c)) : 0;
 
+  const corr = opts.corrections ?? {};
   const heatRemoved = (T: number) => {
+    const extra = corr.extraHeat && !isothermal ? corr.extraHeat(T) : 0;
     switch (p.energy.mode) {
       case "icq":
-        return m_c * Cp_c * (T - T_cool) * icqFactor;
+        return m_c * Cp_c * (T - T_cool) * icqFactor + extra;
       case "jacket":
-        return UA * (T - T_cool);
+        return UA * (T - T_cool) + extra;
       default:
-        return 0;
+        return extra;
     }
   };
+  const minusDHAt = (T: number) => (corr.deltaH ? -corr.deltaH(T) : minusDH);
+  const rateWith = (t: number, X: number, T: number, k: number, Kc: number | null) =>
+    rateAt(model, X, k, Kc) * (corr.rateFactor ? corr.rateFactor(t, X, T) : 1);
 
   const { k: k0, Kc: Keq0 } = thermo(T0);
   const X_eq0 = p.reversible && Keq0 !== null ? equilibriumConversion(model, Keq0) : null;
@@ -95,14 +116,14 @@ export function simulate(p: ReactorParams, opts: SimulateOptions = {}): SimResul
       );
   }
 
-  const rhs = (_t: number, y: Float64Array, dy: Float64Array) => {
+  const rhs = (t: number, y: Float64Array, dy: Float64Array) => {
     const X = Math.min(Math.max(y[0], 0), X_max);
     const T = isothermal ? T0 : Math.max(y[1], 1);
     const { k, Kc } = thermo(T);
-    let r = rateAt(model, X, k, Kc);
+    let r = rateWith(t, X, T, k, Kc);
     if ((X >= X_max && r > 0) || (X <= 0 && r < 0)) r = 0;
     dy[0] = r / CA0;
-    dy[1] = isothermal ? 0 : (minusDH * r * V - heatRemoved(T)) / (V * sumCp);
+    dy[1] = isothermal ? 0 : (minusDHAt(T) * r * V - heatRemoved(T)) / (V * sumCp) + (corr.dT ? corr.dT(t, X, T) : 0);
   };
 
   // ---- Criterios de corte
@@ -192,7 +213,7 @@ export function simulate(p: ReactorParams, opts: SimulateOptions = {}): SimResul
     const X = Math.min(Math.max(buf[0], 0), X_max);
     const T = isothermal ? T0 : buf[1];
     const { k, Kc } = thermo(T);
-    const r = rateAt(model, X, k, Kc);
+    const r = rateWith(t, X, T, k, Kc);
     series.t.push(t);
     series.X.push(X);
     series.T.push(T);
@@ -203,7 +224,7 @@ export function simulate(p: ReactorParams, opts: SimulateOptions = {}): SimResul
       series.Keq.push(Kc);
       series.Xeq!.push(equilibriumConversion(model, Kc) ?? NaN);
     }
-    series.Qg.push(minusDH * r * V);
+    series.Qg.push(minusDHAt(T) * r * V);
     series.Qr.push(heatRemoved(T));
     series.T_cool_out?.push(T - (T - T_cool) * Math.exp(-UA / (m_c * Cp_c)));
   }

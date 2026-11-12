@@ -1,6 +1,7 @@
 import * as Comlink from "comlink";
 import { levenspiel, simulate, xtDiagram, type ReactorParams, type SimResult, type XTDiagram } from "@/engine";
 import { fitParameters, type FitOptions, type FitResult, type Measurements } from "@/engine/fit";
+import { physicsForecast, type ForecastResult, type OpPoint } from "@/engine/forecast";
 
 export interface EngineOutput {
   result: SimResult;
@@ -25,6 +26,17 @@ const api = {
       const r = simulate(p, { samples: 1500 });
       return r.ok ? r.summary.T_max : NaN;
     });
+  },
+  forecastPhysics(
+    nominal: ReactorParams,
+    op: OpPoint,
+    t: number[],
+    T: number[],
+    tc: number,
+    deltaT_ad: number,
+    horizon: number,
+  ): ForecastResult | null {
+    return physicsForecast(nominal, op, t, T, tc, deltaT_ad, { horizon });
   },
   simulateAt(params: ReactorParams, times: number[]): SimResult {
     const p = structuredClone(params);

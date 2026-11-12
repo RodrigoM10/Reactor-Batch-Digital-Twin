@@ -5,11 +5,12 @@
  */
 
 export interface MlpJson {
+  output?: "identity" | "logistic"; // logística: clasificador binario (probabilidad)
   activation: "tanh" | "relu";
   x_mean: number[];
   x_std: number[];
-  y_mean: number;
-  y_scale: number;
+  y_mean: number | number[]; // escalar o uno por salida
+  y_scale: number | number[];
   layers: { W: number[][]; b: number[] }[]; // W: [entrada][salida]
 }
 
@@ -35,6 +36,10 @@ export function loadMlp(d: MlpJson): Mlp {
   const tanh = d.activation === "tanh";
   const last = layers.length - 1;
   const result = new Float64Array(layers[last].nOut);
+  const logistic = d.output === "logistic";
+  const nOut = layers[last].nOut;
+  const ym = Float64Array.from({ length: nOut }, (_, o) => (Array.isArray(d.y_mean) ? d.y_mean[o] : d.y_mean));
+  const ys = Float64Array.from({ length: nOut }, (_, o) => (Array.isArray(d.y_scale) ? d.y_scale[o] : d.y_scale));
 
   return {
     nIn,
@@ -51,7 +56,10 @@ export function loadMlp(d: MlpJson): Mlp {
         }
         h = L.out;
       });
-      for (let o = 0; o < result.length; o++) result[o] = d.y_mean + d.y_scale * h[o];
+      for (let o = 0; o < result.length; o++) {
+        const v = logistic ? 1 / (1 + Math.exp(-h[o])) : h[o];
+        result[o] = ym[o] + ys[o] * v;
+      }
       return result;
     },
   };
