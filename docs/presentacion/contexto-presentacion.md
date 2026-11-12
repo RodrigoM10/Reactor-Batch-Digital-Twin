@@ -36,7 +36,8 @@ Usá este archivo como **única fuente de información** para armar una presenta
 La versión de la tesis se conserva sin cambios como trabajo académico:
 - App v1: https://batch-reactor-front.vercel.app/
 - Código v1: https://github.com/RodrigoM10/Batch-Reactor-Front y https://github.com/RodrigoM10/Batch-Reactor-Simulate
-- App 2.0: `[URL pendiente: todavía no está publicada]`
+- App 2.0: https://reactor-batch-digital-twin.vercel.app/
+- Código 2.0: https://github.com/RodrigoM10/Reactor-Batch-Digital-Twin
 
 ---
 
@@ -235,4 +236,5 @@ Al reescribir el motor se revisó el de la tesis y se corrigieron, por diseño, 
 
 | Fecha | Novedad |
 |---|---|
+| 2026-11-12 | App publicada en https://reactor-batch-digital-twin.vercel.app/ y código en GitHub. |
 | 2026-11-12 | Primera versión del archivo. Incluye el simulador 2.0 y las fases 1 a 4 de ML: motor espejo y planta virtual, *Calibrar*, *Riesgo* y *En vivo*. |
