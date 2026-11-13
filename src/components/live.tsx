@@ -3,19 +3,6 @@
 import { Activity, BellRing, Brain, Eye, EyeOff, FlaskConical, Pause, Play, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ReferenceLine,
-  ResponsiveContainer,
-  Scatter,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
-import {
   loadForecastModel,
   mlForecast,
   riskReference,
@@ -28,6 +15,7 @@ import { cn, fmt } from "@/lib/format";
 import { useEngineWorker } from "@/lib/use-engine";
 import { SiteHeader } from "./site-header";
 import { Card } from "./ui/fields";
+import { Plot } from "./ui/plot";
 
 interface LiveRun {
   id: string;
@@ -142,17 +130,20 @@ export function LiveView() {
     if (!run || !model) return null;
     const n = run.measured.t.findIndex((t) => t > tc);
     const upto = n < 0 ? run.measured.t.length : n;
-    const meas = run.measured.t.slice(0, upto).map((t, i) => ({ t, T: run.measured.T[i] }));
-    const band = phys?.band?.filter((b) => b.t >= phys.tc).map((b) => ({ t: b.t, band: [b.lo, b.hi] as [number, number] }));
-    const physPath = phys?.path.filter((p) => p.t >= phys.tc);
-    const truth = run.clean.t.map((t, i) => ({ t, T: run.clean.T[i] }));
-    return { meas, band, physPath, mlPath: ml?.path, truth };
+    const meas = run.measured.t.slice(0, upto).map((t, i) => ({ u: t, v: run.measured.T[i] }));
+    const band = phys?.band?.filter((b) => b.t >= phys.tc).map((b) => ({ u: b.t, v: [b.lo, b.hi] as [number, number] }));
+    const physPath = phys?.path.filter((p) => p.t >= phys.tc).map((p) => ({ u: p.t, v: p.T }));
+    const mlPath = ml?.path.map((p) => ({ u: p.t, v: p.T }));
+    const truth = run.clean.t.map((t, i) => ({ u: t, v: run.clean.T[i] }));
+    return { meas, band, physPath, mlPath, truth };
   }, [run, model, tc, phys, ml]);
 
   const tPeak = run ? run.clean.t[run.clean.T.indexOf(Math.max(...run.clean.T))] : 0;
   const isRunawayRun = run && model ? Math.max(...run.clean.T) > riskReference(run.op, model.meta.deltaT_ad) : false;
   const threshold = run && model ? riskReference(run.op, model.meta.deltaT_ad) : null;
-  const yDomain = run ? [Math.min(...run.clean.T, run.op.T_cool) - 3, Math.max(...run.clean.T, threshold ?? 0) + 6] : ["auto", "auto"];
+  const yDomain: [number | "auto", number | "auto"] = run
+    ? [Math.min(...run.clean.T, run.op.T_cool) - 3, Math.max(...run.clean.T, threshold ?? 0) + 6]
+    : ["auto", "auto"];
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -248,55 +239,27 @@ export function LiveView() {
               </button>
             </div>
 
-            <div className="h-[420px]">
-              {chart && (
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart margin={{ top: 8, right: 16, bottom: 16, left: 8 }}>
-                    <CartesianGrid stroke="var(--grid)" vertical={false} />
-                    <XAxis
-                      dataKey="t"
-                      type="number"
-                      domain={[0, HORIZON]}
-                      allowDuplicatedCategory={false}
-                      stroke="var(--muted)"
-                      tick={{ fill: "var(--muted)", fontSize: 11 }}
-                      label={{ value: "t [min]", position: "insideBottomRight", offset: -4, fill: "var(--muted)", fontSize: 11 }}
-                    />
-                    <YAxis
-                      domain={yDomain as [number, number]}
-                      allowDataOverflow
-                      stroke="var(--muted)"
-                      tick={{ fill: "var(--muted)", fontSize: 11 }}
-                      tickFormatter={(v) => fmt(v, 4)}
-                      label={{ value: "T [K]", angle: -90, position: "insideLeft", fill: "var(--muted)", fontSize: 11 }}
-                    />
-                    <Tooltip
-                      contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                      formatter={(v: unknown) => (Array.isArray(v) ? `${fmt(v[0], 4)} – ${fmt(v[1], 4)}` : fmt(v as number, 4))}
-                      labelFormatter={(v) => `t = ${fmt(v as number, 3)} min`}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                    {chart.band && (
-                      <Area data={chart.band} dataKey="band" name="Física: banda 10–90 %" stroke="none" fill="var(--series-3)" fillOpacity={0.18} isAnimationActive={false} />
-                    )}
-                    {chart.physPath && (
-                      <Line data={chart.physPath} dataKey="T" name="Física: pronóstico" stroke="var(--series-3)" strokeWidth={2} dot={false} isAnimationActive={false} />
-                    )}
-                    {chart.mlPath && (
-                      <Line data={chart.mlPath} dataKey="T" name="ML: pronóstico" stroke="var(--accent)" strokeWidth={2.5} strokeDasharray="5 3" dot={{ r: 2.5 }} isAnimationActive={false} />
-                    )}
-                    <Scatter data={chart.meas} dataKey="T" name="Medición" fill="var(--muted)" shape={(props: { cx?: number; cy?: number }) => <circle cx={props.cx} cy={props.cy} r={1.6} fill="var(--muted)" />} isAnimationActive={false} />
-                    {(showTruth || finished) && (
-                      <Line data={chart.truth} dataKey="T" name="Trayectoria real" stroke="var(--heat)" strokeWidth={1.5} dot={false} isAnimationActive={false} />
-                    )}
-                    {threshold && (
-                      <ReferenceLine y={threshold} stroke="var(--danger)" strokeDasharray="4 4" label={{ value: "umbral de runaway", fill: "var(--danger)", fontSize: 11, position: "insideTopRight" }} />
-                    )}
-                    <ReferenceLine x={tc} stroke="var(--text)" strokeOpacity={0.4} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              )}
-            </div>
+            {chart && (
+              <Plot
+                header={<span className="block py-2 text-sm font-semibold">Temperatura del reactor</span>}
+                height={420}
+                u={{ label: "t [min]", name: "t", unit: "min", domain: [0, HORIZON] }}
+                v={{ label: "T [K]", name: "T", unit: "K", domain: yDomain, digits: 4 }}
+                series={[
+                  ...(chart.band ? [{ id: "band", kind: "band" as const, name: "Física: banda 10–90 %", color: "var(--series-3)", data: chart.band }] : []),
+                  ...(chart.physPath ? [{ id: "phys", name: "Física: pronóstico", color: "var(--series-3)", data: chart.physPath }] : []),
+                  ...(chart.mlPath
+                    ? [{ id: "ml", name: "ML: pronóstico", color: "var(--accent)", width: 2.5, dashed: "5 3", dot: 2.5, data: chart.mlPath }]
+                    : []),
+                  { id: "meas", kind: "scatter" as const, name: "Medición", color: "var(--muted)", dot: 1.6, data: chart.meas },
+                  ...(showTruth || finished ? [{ id: "truth", name: "Trayectoria real", color: "var(--heat)", width: 1.5, data: chart.truth }] : []),
+                ]}
+                refs={[
+                  ...(threshold ? [{ axis: "v" as const, value: threshold, color: "var(--danger)", dashed: true, label: "umbral de runaway" }] : []),
+                  { axis: "u" as const, value: tc, color: "var(--text)", opacity: 0.4 },
+                ]}
+              />
+            )}
             {finished && run && (
               <p className="mt-2 text-sm">
                 Resultado real: {isRunawayRun ? <strong className="text-danger">hubo runaway</strong> : <strong className="text-ok">sin runaway</strong>}{" "}

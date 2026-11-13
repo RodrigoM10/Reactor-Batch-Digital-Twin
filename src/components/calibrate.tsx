@@ -2,17 +2,6 @@
 
 import { AlertTriangle, CheckCircle2, FileUp, Loader2, Play, Upload } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
-import {
-  CartesianGrid,
-  ComposedChart,
-  Legend,
-  Line,
-  ResponsiveContainer,
-  Scatter,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import type { SimResult } from "@/engine";
 import { parseMeasurementsCsv, type FitParam, type FitResult, type Measurements } from "@/engine/fit";
 import { cn, fmt, TIME_LABEL } from "@/lib/format";
@@ -21,6 +10,7 @@ import { useEngineWorker } from "@/lib/use-engine";
 import { reactionEquation } from "./params-panel";
 import { SiteHeader } from "./site-header";
 import { Card, NumberField } from "./ui/fields";
+import { Plot } from "./ui/plot";
 
 const DEMO_RUNS = [
   { file: "corrida-icq-ideal.csv", label: "Planta ideal", hint: "Solo parámetros distintos y ruido: el modelo puede explicarla." },
@@ -119,12 +109,13 @@ export function Calibrate() {
 
   const chartData = useMemo(() => {
     if (!data) return null;
-    const points = data.t.map((t, i) => ({ t, T: data.T?.[i] ?? null, X: data.X?.[i] ?? null }));
+    const meas = (ys: (number | null)[] | undefined) =>
+      ys ? data.t.flatMap((t, i) => (ys[i] === null || ys[i] === undefined ? [] : [{ u: t, v: ys[i] as number }])) : [];
     const line = (s: SimResult | null | undefined, key: "T" | "X") =>
-      s && s.ok ? s.series.t.map((t, i) => ({ t, v: s.series[key][i] })) : [];
+      s && s.ok ? s.series.t.map((t, i) => ({ u: t, v: s.series[key][i] })) : [];
     return {
-      measT: points.filter((p) => p.T !== null),
-      measX: points.filter((p) => p.X !== null),
+      measT: meas(data.T),
+      measX: meas(data.X),
       beforeT: line(curves?.before, "T"),
       afterT: line(curves?.after, "T"),
       beforeX: line(curves?.before, "X"),
@@ -283,52 +274,27 @@ export function Calibrate() {
           )}
 
           {chartData && (
-            <Card className="p-2">
-              <div className="px-3 pt-2 text-sm font-semibold">
-                {chartData.measT.length && nonIso ? "Temperatura" : "Conversión"}: medición vs. modelo
-              </div>
-              <div className="h-[360px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart margin={{ top: 8, right: 16, bottom: 16, left: 8 }}>
-                    <CartesianGrid stroke="var(--grid)" vertical={false} />
-                    <XAxis
-                      dataKey="t"
-                      type="number"
-                      domain={[0, "dataMax"]}
-                      stroke="var(--muted)"
-                      tick={{ fill: "var(--muted)", fontSize: 11 }}
-                      tickFormatter={(v) => fmt(v, 3)}
-                      allowDuplicatedCategory={false}
-                      label={{ value: `t [${tu}]`, position: "insideBottomRight", offset: -4, fill: "var(--muted)", fontSize: 11 }}
-                    />
-                    {chartData.measT.length > 0 && nonIso ? (
-                      <>
-                        <YAxis dataKey="T" domain={["auto", "auto"]} stroke="var(--muted)" tick={{ fill: "var(--muted)", fontSize: 11 }} tickFormatter={(v) => fmt(v, 4)} />
-                        <Scatter data={chartData.measT} dataKey="T" name="Medición" fill="var(--muted)" shape="circle" isAnimationActive={false} />
-                        <Line data={chartData.beforeT} dataKey="v" name="Modelo nominal" stroke="var(--series-3)" strokeDasharray="6 4" dot={false} isAnimationActive={false} />
-                        {chartData.afterT.length > 0 && (
-                          <Line data={chartData.afterT} dataKey="v" name="Modelo ajustado" stroke="var(--heat)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
-                        )}
-                      </>
-                    ) : (
-                      <>
-                        <YAxis dataKey="X" domain={[0, 1]} stroke="var(--muted)" tick={{ fill: "var(--muted)", fontSize: 11 }} />
-                        <Scatter data={chartData.measX} dataKey="X" name="Medición" fill="var(--muted)" isAnimationActive={false} />
-                        <Line data={chartData.beforeX} dataKey="v" name="Modelo nominal" stroke="var(--series-3)" strokeDasharray="6 4" dot={false} isAnimationActive={false} />
-                        {chartData.afterX.length > 0 && (
-                          <Line data={chartData.afterX} dataKey="v" name="Modelo ajustado" stroke="var(--accent)" strokeWidth={2.5} dot={false} isAnimationActive={false} />
-                        )}
-                      </>
-                    )}
-                    <Tooltip
-                      contentStyle={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 8, fontSize: 12 }}
-                      formatter={(v: unknown) => fmt(v as number)}
-                      labelFormatter={(v) => `t = ${fmt(v as number)} ${tu}`}
-                    />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-              </div>
+            <Card>
+              {(() => {
+                const useT = chartData.measT.length > 0 && nonIso;
+                const after = useT ? chartData.afterT : chartData.afterX;
+                return (
+                  <Plot
+                    resetKey={useT ? "T" : "X"}
+                    header={<span className="block px-4 py-2.5 text-sm font-semibold">{useT ? "Temperatura" : "Conversión"}: medición vs. modelo</span>}
+                    height={360}
+                    u={{ label: `t [${tu}]`, name: "t", unit: tu, domain: [0, "dataMax"] }}
+                    v={useT ? { label: "T [K]", name: "T", unit: "K", digits: 4 } : { label: "X", name: "X", domain: [0, 1] }}
+                    series={[
+                      { id: "meas", kind: "scatter", name: "Medición", color: "var(--muted)", data: useT ? chartData.measT : chartData.measX },
+                      { id: "before", name: "Modelo nominal", color: "var(--series-3)", dashed: true, data: useT ? chartData.beforeT : chartData.beforeX },
+                      ...(after.length > 0
+                        ? [{ id: "after", name: "Modelo ajustado", color: useT ? "var(--heat)" : "var(--accent)", width: 2.5, data: after }]
+                        : []),
+                    ]}
+                  />
+                );
+              })()}
             </Card>
           )}
 

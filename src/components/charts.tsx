@@ -1,19 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  CartesianGrid,
-  Legend,
-  Line,
-  LineChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 import type { ReactorParams, SimOk, XTDiagram } from "@/engine";
-import { cn, fmt, TIME_LABEL } from "@/lib/format";
+import { cn, TIME_LABEL } from "@/lib/format";
+import { Plot, type AxisSpec, type RefSpec, type SeriesSpec } from "./ui/plot";
 
 const SERIES = ["var(--series-1)", "var(--series-2)", "var(--series-3)", "var(--series-4)", "var(--series-5)", "var(--series-6)"];
 
@@ -27,23 +17,13 @@ interface Props {
   cursorT: number;
 }
 
-const axisProps = {
-  stroke: "var(--muted)",
-  tick: { fill: "var(--muted)", fontSize: 11 },
-  tickLine: false,
-} as const;
-
-const tooltipProps = {
-  contentStyle: {
-    background: "var(--surface)",
-    border: "1px solid var(--border)",
-    borderRadius: 8,
-    fontSize: 12,
-    color: "var(--text)",
-  },
-  labelStyle: { color: "var(--muted)" },
-  formatter: (v: unknown) => fmt(v as number),
-} as const;
+interface ChartSpec {
+  u: AxisSpec;
+  v: AxisSpec;
+  series: SeriesSpec[];
+  refs?: RefSpec[];
+  footer?: string;
+}
 
 export function Charts({ params, sim, xt, lev, cursorT }: Props) {
   const nonIso = params.energy.mode !== "isothermal";
@@ -61,171 +41,115 @@ export function Charts({ params, sim, xt, lev, cursorT }: Props) {
   const active = visible.some((t) => t.id === tab) ? tab : "C";
   const tu = TIME_LABEL[params.timeUnit];
 
-  const rows = useMemo(
-    () =>
-      sim.series.t.map((t, i) => {
-        const row: Record<string, number> = {
-          t,
-          X: sim.series.X[i],
-          T: sim.series.T[i],
-          Qg: sim.series.Qg[i],
-          Qr: sim.series.Qr[i],
+  const spec = useMemo((): ChartSpec => {
+    const t = sim.series.t;
+    const over = (ys: number[]) => t.map((u, i) => ({ u, v: ys[i] }));
+    const time: AxisSpec = { label: `t [${tu}]`, name: "t", unit: tu, domain: [0, "dataMax"] };
+
+    switch (active) {
+      case "C":
+        return {
+          u: time,
+          v: { label: "C [mol/L]", name: "C", unit: "mol/L" },
+          series: params.species.map((s, i) => ({
+            id: s.id,
+            name: s.name ? `${s.id} · ${s.name}` : s.id,
+            color: SERIES[i % SERIES.length],
+            dashed: s.nu === 0,
+            data: over(sim.series.C[s.id]),
+          })),
         };
-        if (sim.series.Xeq) row.Xeq = sim.series.Xeq[i];
-        if (sim.series.T_cool_out) row.Tco = sim.series.T_cool_out[i];
-        for (const id of Object.keys(sim.series.C)) row[`C_${id}`] = sim.series.C[id][i];
-        return row;
-      }),
-    [sim],
-  );
+      case "X":
+        return {
+          u: time,
+          v: { label: "X", name: "X", domain: [0, 1] },
+          series: [
+            { id: "X", name: `X_${params.keySpecies}`, color: SERIES[0], data: over(sim.series.X) },
+            ...(sim.series.Xeq ? [{ id: "Xeq", name: "X de equilibrio", color: SERIES[2], dashed: true, data: over(sim.series.Xeq) }] : []),
+          ],
+          refs: [
+            ...(params.stop.mode === "conversion"
+              ? [{ axis: "v" as const, value: params.stop.X_target, color: "var(--warn)", dashed: true, label: "objetivo" }]
+              : []),
+          ],
+        };
+      case "T":
+        return {
+          u: time,
+          v: { label: "T [K]", name: "T", unit: "K", digits: 4 },
+          series: [
+            { id: "T", name: "T reactor", color: "var(--heat)", data: over(sim.series.T) },
+            ...(sim.series.T_cool_out
+              ? [{ id: "Tco", name: "Salida refrigerante", color: "var(--cool)", dashed: true, data: over(sim.series.T_cool_out) }]
+              : []),
+          ],
+          refs: [
+            ...(cooled ? [{ axis: "v" as const, value: params.energy.T_cool, color: "var(--cool)", opacity: 0.6, label: "T refrigerante" }] : []),
+          ],
+        };
+      case "Q":
+        return {
+          u: time,
+          v: { label: `Q [cal/${tu}]`, name: "Q", unit: `cal/${tu}` },
+          series: [
+            { id: "Qg", name: "Calor generado", color: "var(--heat)", data: over(sim.series.Qg) },
+            ...(cooled ? [{ id: "Qr", name: "Calor removido", color: "var(--cool)", data: over(sim.series.Qr) }] : []),
+          ],
+        };
+      case "XT": {
+        const pts = (a: { X: number; T: number }[]) => a.map((p) => ({ u: p.X, v: p.T }));
+        return {
+          u: { label: "X", name: "X", domain: [0, 1] },
+          v: { label: "T [K]", name: "T", unit: "K", domain: [xt!.Tmin, xt!.Tmax], digits: 4 },
+          series: [
+            ...(xt!.equilibrium ? [{ id: "eq", name: "Equilibrio X_eq(T)", color: SERIES[2], data: pts(xt!.equilibrium) }] : []),
+            ...(xt!.optimal && xt!.optimal.length > 1
+              ? [{ id: "opt", name: "T óptima (máx. velocidad)", color: SERIES[3], dashed: true, data: pts(xt!.optimal) }]
+              : []),
+            ...(xt!.adiabatic && nonIso
+              ? [{ id: "ad", name: "Recta adiabática", color: "var(--muted)", dashed: "3 3", width: 1.5, data: pts(xt!.adiabatic) }]
+              : []),
+            { id: "traj", name: "Trayectoria", color: "var(--heat)", width: 3, data: pts(xt!.trajectory) },
+          ],
+          footer:
+            "Para una reacción reversible exotérmica, la velocidad máxima sigue la curva de T óptima: conviene arrancar caliente y enfriar a medida que avanza la conversión.",
+        };
+      }
+      case "L":
+        return {
+          u: { label: "X", name: "X", domain: [0, "dataMax"] },
+          v: { label: `C₀/(−r) [${tu}]`, name: "C₀/(−r)", unit: tu, log: true, digits: 2 },
+          series: [{ id: "inv", name: "C₀ / (−r)", color: SERIES[0], data: lev.map((p) => ({ u: p.X, v: p.inv })) }],
+          footer: "El área bajo la curva entre 0 y X es el tiempo de reacción del batch.",
+        };
+    }
+  }, [active, sim, params, xt, lev, tu, nonIso, cooled]);
 
-  const timeAxis = (
-    <XAxis
-      {...axisProps}
-      dataKey="t"
-      type="number"
-      domain={[0, "dataMax"]}
-      tickFormatter={(v) => fmt(v, 3)}
-      label={{ value: `t [${tu}]`, position: "insideBottomRight", offset: -4, fill: "var(--muted)", fontSize: 11 }}
-    />
-  );
-  const cursor = <ReferenceLine x={cursorT} stroke="var(--text)" strokeOpacity={0.35} strokeDasharray="4 4" />;
-  const grid = <CartesianGrid stroke="var(--grid)" vertical={false} />;
-  const line = (key: string, name: string, color: string, dashed = false) => (
-    <Line
-      key={key}
-      dataKey={key}
-      name={name}
-      stroke={color}
-      strokeWidth={2}
-      strokeDasharray={dashed ? "6 4" : undefined}
-      dot={false}
-      isAnimationActive={false}
-    />
-  );
+  // El cursor de reproducción va aparte para no rearmar las series en cada cuadro.
+  const timeChart = active !== "XT" && active !== "L";
+  const refs: RefSpec[] = [
+    ...(spec.refs ?? []),
+    ...(timeChart ? [{ axis: "u" as const, value: cursorT, color: "var(--text)", opacity: 0.35, dashed: true }] : []),
+  ];
 
-  let chart: React.ReactElement;
-  switch (active) {
-    case "C":
-      chart = (
-        <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 16, left: 0 }}>
-          {grid}
-          {timeAxis}
-          <YAxis {...axisProps} tickFormatter={(v) => fmt(v, 3)} label={{ value: "C [mol/L]", angle: -90, position: "insideLeft", fill: "var(--muted)", fontSize: 11 }} />
-          <Tooltip {...tooltipProps} labelFormatter={(v) => `t = ${fmt(v as number)} ${tu}`} />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          {params.species.map((s, i) => line(`C_${s.id}`, s.name ? `${s.id} · ${s.name}` : s.id, SERIES[i % SERIES.length], s.nu === 0))}
-          {cursor}
-        </LineChart>
-      );
-      break;
-    case "X":
-      chart = (
-        <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 16, left: 0 }}>
-          {grid}
-          {timeAxis}
-          <YAxis {...axisProps} domain={[0, 1]} label={{ value: "X", angle: -90, position: "insideLeft", fill: "var(--muted)", fontSize: 11 }} />
-          <Tooltip {...tooltipProps} labelFormatter={(v) => `t = ${fmt(v as number)} ${tu}`} />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          {line("X", `X_${params.keySpecies}`, SERIES[0])}
-          {sim.series.Xeq && line("Xeq", "X de equilibrio", SERIES[2], true)}
-          {params.stop.mode === "conversion" && (
-            <ReferenceLine y={params.stop.X_target} stroke="var(--warn)" strokeDasharray="3 3" label={{ value: "objetivo", fill: "var(--warn)", fontSize: 11 }} />
+  const tablist = (
+    <div role="tablist" className="flex gap-1 overflow-x-auto px-2">
+      {visible.map((t) => (
+        <button
+          key={t.id}
+          role="tab"
+          aria-selected={active === t.id}
+          onClick={() => setTab(t.id)}
+          className={cn(
+            "-mb-px border-b-2 px-3 py-2.5 text-sm whitespace-nowrap transition-colors",
+            active === t.id ? "border-accent font-medium text-accent" : "border-transparent text-muted hover:text-text",
           )}
-          {cursor}
-        </LineChart>
-      );
-      break;
-    case "T":
-      chart = (
-        <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 16, left: 8 }}>
-          {grid}
-          {timeAxis}
-          <YAxis {...axisProps} domain={["auto", "auto"]} tickFormatter={(v) => fmt(v, 4)} label={{ value: "T [K]", angle: -90, position: "insideLeft", fill: "var(--muted)", fontSize: 11 }} />
-          <Tooltip {...tooltipProps} labelFormatter={(v) => `t = ${fmt(v as number)} ${tu}`} />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          {line("T", "T reactor", "var(--heat)")}
-          {sim.series.T_cool_out && line("Tco", "Salida refrigerante", "var(--cool)", true)}
-          {cooled && (
-            <ReferenceLine y={params.energy.T_cool} stroke="var(--cool)" strokeOpacity={0.6} label={{ value: "T refrigerante", fill: "var(--cool)", fontSize: 11 }} />
-          )}
-          {cursor}
-        </LineChart>
-      );
-      break;
-    case "Q":
-      chart = (
-        <LineChart data={rows} margin={{ top: 8, right: 16, bottom: 16, left: 8 }}>
-          {grid}
-          {timeAxis}
-          <YAxis {...axisProps} tickFormatter={(v) => fmt(v, 3)} label={{ value: `Q [cal/${tu}]`, angle: -90, position: "insideLeft", fill: "var(--muted)", fontSize: 11 }} />
-          <Tooltip {...tooltipProps} labelFormatter={(v) => `t = ${fmt(v as number)} ${tu}`} />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          {line("Qg", "Calor generado", "var(--heat)")}
-          {cooled && line("Qr", "Calor removido", "var(--cool)")}
-          {cursor}
-        </LineChart>
-      );
-      break;
-    case "XT":
-      chart = (
-        <LineChart margin={{ top: 8, right: 16, bottom: 16, left: 0 }}>
-          <CartesianGrid stroke="var(--grid)" />
-          <XAxis {...axisProps} dataKey="T" type="number" domain={[xt!.Tmin, xt!.Tmax]} allowDuplicatedCategory={false} tickFormatter={(v) => fmt(v, 4)} label={{ value: "T [K]", position: "insideBottomRight", offset: -4, fill: "var(--muted)", fontSize: 11 }} />
-          <YAxis {...axisProps} dataKey="X" domain={[0, 1]} label={{ value: "X", angle: -90, position: "insideLeft", fill: "var(--muted)", fontSize: 11 }} />
-          <Tooltip {...tooltipProps} labelFormatter={(v) => `T = ${fmt(v as number)} K`} />
-          <Legend wrapperStyle={{ fontSize: 12 }} />
-          {xt!.equilibrium && <Line data={xt!.equilibrium} dataKey="X" name="Equilibrio X_eq(T)" stroke={SERIES[2]} strokeWidth={2} dot={false} isAnimationActive={false} />}
-          {xt!.optimal && xt!.optimal.length > 1 && <Line data={xt!.optimal} dataKey="X" name="T óptima (máx. velocidad)" stroke={SERIES[3]} strokeWidth={2} strokeDasharray="6 4" dot={false} isAnimationActive={false} />}
-          {xt!.adiabatic && nonIso && <Line data={xt!.adiabatic} dataKey="X" name="Recta adiabática" stroke="var(--muted)" strokeDasharray="3 3" dot={false} isAnimationActive={false} />}
-          <Line data={xt!.trajectory} dataKey="X" name="Trayectoria" stroke="var(--heat)" strokeWidth={3} dot={false} isAnimationActive={false} />
-        </LineChart>
-      );
-      break;
-    case "L":
-      chart = (
-        <LineChart data={lev} margin={{ top: 8, right: 16, bottom: 16, left: 8 }}>
-          {grid}
-          <XAxis {...axisProps} dataKey="X" type="number" domain={[0, "dataMax"]} tickFormatter={(v) => fmt(v, 3)} label={{ value: "X", position: "insideBottomRight", offset: -4, fill: "var(--muted)", fontSize: 11 }} />
-          <YAxis {...axisProps} scale="log" domain={["auto", "auto"]} allowDataOverflow tickFormatter={(v) => fmt(v, 2)} label={{ value: `C₀/(−r) [${tu}]`, angle: -90, position: "insideLeft", fill: "var(--muted)", fontSize: 11 }} />
-          <Tooltip {...tooltipProps} labelFormatter={(v) => `X = ${fmt(v as number)}`} />
-          {line("inv", "C₀ / (−r)", SERIES[0])}
-        </LineChart>
-      );
-      break;
-  }
-
-  return (
-    <div>
-      <div role="tablist" className="flex gap-1 overflow-x-auto border-b border-border px-2">
-        {visible.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={active === t.id}
-            onClick={() => setTab(t.id)}
-            className={cn(
-              "border-b-2 px-3 py-2.5 text-sm whitespace-nowrap transition-colors",
-              active === t.id ? "border-accent font-medium text-accent" : "border-transparent text-muted hover:text-text",
-            )}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
-      <div className="h-[340px] p-2">
-        <ResponsiveContainer width="100%" height="100%">
-          {chart}
-        </ResponsiveContainer>
-      </div>
-      {active === "L" && (
-        <p className="px-4 pb-3 text-xs text-muted">El área bajo la curva entre 0 y X es el tiempo de reacción del batch.</p>
-      )}
-      {active === "XT" && (
-        <p className="px-4 pb-3 text-xs text-muted">
-          Para una reacción reversible exotérmica, la velocidad máxima sigue la curva de T óptima: conviene arrancar caliente y enfriar a medida que avanza la conversión.
-        </p>
-      )}
+        >
+          {t.label}
+        </button>
+      ))}
     </div>
   );
+
+  return <Plot {...spec} refs={refs} header={tablist} resetKey={active} />;
 }
